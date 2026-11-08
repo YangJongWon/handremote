@@ -1,0 +1,42 @@
+{
+  "name": "handremote",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Your PC's windows, widgets, tray icons and servers on your phone, each laid out at the phone's size and editable. Works alone or as handide's PC tile.",
+  "keywords": [
+    "remote",
+    "phone",
+    "windows",
+    "remote-desktop",
+    "mobile",
+    "tailscale",
+    "handide"
+  ],
+  "homepage": "https://github.com/YangJongWon/handremote#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YangJongWon/handremote.git"
+  },
+  "type": "module",
+  "bin": {
+    "handremote": "bin/handremote.mjs"
+  },
+  "scripts": {
+    "start": "node bin/handremote.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "os": [
+    "win32"
+  ],
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "selfsigned": "^5.5.0"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

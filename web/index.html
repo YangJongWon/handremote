@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#0f1115">
+<title>handremote</title>
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header id="top">
+	<div class="who"><span class="dot" id="dot"></span><b id="host">PC</b></div>
+	<button type="button" id="refresh" class="icon-btn" aria-label="Refresh">↻</button>
+</header>
+
+<main id="list" aria-live="polite">
+	<p class="empty" id="loading" data-t="loading"></p>
+</main>
+
+<section id="viewer" hidden aria-modal="true" role="dialog">
+	<div class="vbar">
+		<button type="button" class="icon-btn" id="v-close" aria-label="Close">✕</button>
+		<span class="v-title" id="v-title"></span>
+		<button type="button" class="chip" id="v-fit"></button>
+		<button type="button" class="icon-btn" id="v-drag" aria-pressed="false" title="Drag">✥</button>
+		<button type="button" class="chip" id="v-sas" hidden>Ctrl+Alt+Del</button>
+	</div>
+	<div class="stage" id="stage"><img id="screen" alt="" draggable="false"></div>
+	<div class="keys" id="keys"></div>
+	<form class="typebar" id="typebar" autocomplete="off">
+		<input id="type" enterkeyhint="send" autocapitalize="off" autocorrect="off" spellcheck="false">
+		<button type="submit" class="chip" data-t="send"></button>
+	</form>
+	<div class="toast" id="toast" role="status" hidden></div>
+</section>
+
+<section id="sheet" hidden role="dialog">
+	<div class="sheet-card">
+		<div class="sheet-head"><b id="sheet-title"></b><button type="button" class="icon-btn" id="sheet-close" aria-label="Close">✕</button></div>
+		<dl id="sheet-body"></dl>
+	</div>
+</section>
+<script src="app.js"></script>
+</body>
+</html>
