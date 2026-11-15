@@ -114,12 +114,15 @@ export function startAgents({ dataDir, log }) {
 	const cacheDir = join(dataDir, 'cache');
 	const frames = startProcess('frames', { cacheDir, log });
 	const control = startProcess('control', { cacheDir, log });
+	const sound = startProcess('sound', { cacheDir, log });
 	return {
 		frames: frames.lines,
 		control: control.lines,
+		sound: sound.lines,
 		stop() {
 			frames.stop();
 			control.stop();
+			sound.stop();
 		},
 	};
 }

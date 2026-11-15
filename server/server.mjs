@@ -20,6 +20,7 @@ import { serverStatus } from './system.mjs';
 import { startTailscale } from './tailscale.mjs';
 import { ensureCert, lanAddresses } from './tls.mjs';
 import { acceptWebSocket } from './ws.mjs';
+import { watchDownloads } from './downloads.mjs';
 import { HELPER_PIPE, readHelperSecret, helperInstalled } from './helper.mjs';
 
 export const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -93,6 +94,7 @@ export async function startServer(opts) {
 	const linkSecret = crypto.randomBytes(24).toString('base64url');
 	const agents = startAgents({ dataDir, log });
 	const helper = helperClient({ pipe: HELPER_PIPE, secret: readHelperSecret, log });
+	const downloads = watchDownloads({ log });
 	const quality = Number(config.quality) || 70;
 
 	// ------------------------------------------------------------ fitted windows
@@ -185,7 +187,7 @@ export async function startServer(opts) {
 		const helperOk = helperInfo.connected;
 		lastWindows = new Map(wins.windows.map((w) => [w.hwnd, w]));
 		for (const w of wins.windows) w.viewOnly = w.elevated && !helperOk;
-		return { ok: true, api: API_VERSION, version: VERSION, host: os.hostname(), windows: wins.windows, tray: trayCache.items, servers: servers.servers, helper: helperInfo, linked: !!ctx.linked };
+		return { ok: true, api: API_VERSION, version: VERSION, now: Date.now(), downloads: downloads.recent(), host: os.hostname(), windows: wins.windows, tray: trayCache.items, servers: servers.servers, helper: helperInfo, linked: !!ctx.linked };
 	}
 
 	/** Which agent drives a window: elevated ones and the secure desktop (hwnd 0) need the helper. */
@@ -197,6 +199,9 @@ export async function startServer(opts) {
 		return { frames: helper, control: helper };
 	}
 
+	let soundOwner = null; // the viewer whose sound the PC captures now
+	let micOwner = null; // the viewer whose microphone the PC plays into the cable
+
 	// ------------------------------------------------------------ the window viewer
 	function view(ws, query, ctx) {
 		const hwnd = Number(query.get('hwnd')) || 0;
@@ -205,11 +210,37 @@ export async function startServer(opts) {
 		const frames = drive?.frames || agents.frames; // elevated windows can still be seen without the helper
 		const control = drive?.control || agents.control;
 		let crc = 0;
+		let popupSent = 0;
 		let stopped = false;
 		let entry = null;
 		const fit = query.get('fit') === '1' && hwnd !== 0;
 		const size = { w: Math.max(200, Math.min(2000, Number(query.get('w')) || 390)), h: Math.max(200, Math.min(3000, Number(query.get('h')) || 760)) };
 		const fail = (err) => ws.sendText({ t: 'error', code: err.code || null, msg: err.message });
+
+		// Sound for this viewer: off, this window's program, or the whole PC. One capture at a
+		// time on the PC: the viewer that set it last owns it. Sent as binary messages tagged
+		// "A" (the frames are JPEG, which start with 0xFF).
+		let soundMode = 'off';
+		let soundTimer = null;
+		const TAG = Buffer.from('A');
+		async function setSound(mode) {
+			soundMode = ['window', 'all'].includes(mode) ? mode : 'off';
+			clearInterval(soundTimer);
+			soundTimer = null;
+			soundOwner = ws;
+			const pid = lastWindows.get(hwnd)?.pid || 0;
+			const r = await agents.sound.request('sound', { mode: soundMode === 'window' && !pid ? 'off' : soundMode, pid }, { urgent: true, timeout: 8000 });
+			ws.sendText({ t: 'sound', mode: r.mode, error: r.error || null });
+			if (r.mode === 'off' || stopped) return;
+			soundTimer = setInterval(async () => {
+				if (stopped || soundOwner !== ws) return clearInterval(soundTimer);
+				try {
+					const s = await agents.sound.request('soundRead', {}, { timeout: 3000 });
+					if (s.pcm && ws.backlog < 1 << 20) ws.sendBinary(Buffer.concat([TAG, Buffer.from(s.pcm, 'base64')]));
+					if (s.error) ws.sendText({ t: 'sound', mode: 'off', error: s.error });
+				} catch {}
+			}, 80);
+		}
 
 		(async () => {
 			try {
@@ -227,6 +258,8 @@ export async function startServer(opts) {
 			try {
 				const f = await frames.request('frame', { hwnd, q: quality, crc }, { timeout: 10000 });
 				if (stopped) return;
+				if (f.popup && f.popup !== popupSent) ws.sendText({ t: 'popup', hwnd: f.popup, title: f.popupTitle || '' });
+				popupSent = f.popup || 0;
 				if (!f.same) {
 					crc = f.crc;
 					ws.sendText({ t: 'frame', w: f.w, h: f.h, desktop: f.desktop });
@@ -244,6 +277,28 @@ export async function startServer(opts) {
 			}
 		}
 
+		// The phone's microphone: on/off as text, then binary messages tagged "M" (24 kHz mono
+		// 16-bit) played into the virtual cable. One phone at a time, like the sound.
+		async function setMic(on) {
+			try {
+				const r = await agents.sound.request('mic', { on: !!on }, { urgent: true, timeout: 8000 });
+				micOwner = on ? ws : micOwner === ws ? null : micOwner;
+				ws.sendText({ t: 'mic', on: !!on, device: r.device || null });
+			} catch (err) {
+				if (micOwner === ws) micOwner = null;
+				ws.sendText({ t: 'mic', on: false, error: err.code || 'error', msg: err.message });
+			}
+		}
+		let micBusy = false;
+		ws.on('binary', (buf) => {
+			if (buf[0] !== 0x4d || micOwner !== ws || micBusy) return; // a late chunk is dropped, not queued
+			micBusy = true;
+			agents.sound
+				.request('micWrite', { pcm: buf.subarray(1).toString('base64') }, { timeout: 2000 })
+				.catch(() => {})
+				.finally(() => (micBusy = false));
+		});
+
 		ws.on('message', async (text) => {
 			let m;
 			try {
@@ -259,6 +314,8 @@ export async function startServer(opts) {
 					crc = 0;
 					return ws.sendText({ t: 'fitted', fitted: entry.fitted });
 				}
+				if (m.t === 'sound') return await setSound(String(m.mode || 'off'));
+				if (m.t === 'mic') return await setMic(!!m.on);
 				if (viewOnly) return ws.sendText({ t: 'error', code: 'view-only', msg: 'view only' });
 				const urgent = { urgent: true };
 				if (m.t === 'mouse') await control.request('mouse', { hwnd, t: String(m.a), fx: Number(m.fx), fy: Number(m.fy), dy: Math.round(Number(m.dy) || 0), dx: Math.round(Number(m.dx) || 0) }, urgent);
@@ -272,6 +329,15 @@ export async function startServer(opts) {
 
 		ws.on('close', () => {
 			stopped = true;
+			clearInterval(soundTimer);
+			if (soundOwner === ws) {
+				soundOwner = null;
+				agents.sound.request('sound', { mode: 'off' }).catch(() => {});
+			}
+			if (micOwner === ws) {
+				micOwner = null;
+				agents.sound.request('mic', { on: false }).catch(() => {});
+			}
 			if (entry) release(hwnd);
 		});
 	}
@@ -287,7 +353,15 @@ export async function startServer(opts) {
 				return res.end(await readFile(file));
 			}
 			if (p === '/api/list') return sendJson(res, 200, await list(ctx));
-			if (p === '/api/state') return sendJson(res, 200, { ok: true, api: API_VERSION, version: VERSION, helper: await helperState(ctx) });
+			if (p === '/api/state') return sendJson(res, 200, { ok: true, api: API_VERSION, version: VERSION, now: Date.now(), downloads: downloads.recent(), helper: await helperState(ctx) });
+			if (p === '/api/download/open' && req.method === 'POST') {
+				// Only a download this server saw finish, by its id: never a path from the phone.
+				const body = await readBody(req);
+				const d = downloads.get(Number(body.id));
+				if (!d) return sendJson(res, 404, { ok: false, error: 'not found' });
+				await agents.control.request('open', { path: d.path, folder: body.how === 'folder' }, { urgent: true });
+				return sendJson(res, 200, { ok: true });
+			}
 			if (p === '/api/icon') {
 				const r = await agents.control.request('icon', { hwnd: Number(url.searchParams.get('hwnd')) || 0 });
 				if (!r.png) return sendJson(res, 404, { ok: false });
@@ -295,6 +369,27 @@ export async function startServer(opts) {
 				return res.end(Buffer.from(r.png, 'base64'));
 			}
 			if (p === '/api/proc') return sendJson(res, 200, await agents.control.request('proc', { pid: Number(url.searchParams.get('pid')) || 0 }));
+			if (p === '/api/close' && req.method === 'POST') {
+				// Only windows from the last list, each through the agent allowed to drive it.
+				const body = await readBody(req);
+				const hwnds = [...new Set((Array.isArray(body.hwnds) ? body.hwnds : []).map(Number))].filter((h) => h > 0 && lastWindows.has(h)).slice(0, 100);
+				let closed = 0;
+				const failed = [];
+				for (const hwnd of hwnds) {
+					const drive = driverFor(hwnd, ctx);
+					if (!drive) {
+						failed.push({ hwnd, code: 'view-only' });
+						continue;
+					}
+					try {
+						if ((await drive.control.request('close', { hwnd }, { urgent: true })).sent) closed++;
+						else failed.push({ hwnd, code: 'refused' });
+					} catch (err) {
+						failed.push({ hwnd, code: err.code || 'error' });
+					}
+				}
+				return sendJson(res, 200, { ok: true, closed, failed });
+			}
 			if (p === '/api/tray' && req.method === 'POST') {
 				const body = await readBody(req);
 				trayCache.at = 0;

@@ -18,18 +18,32 @@ export function acceptWebSocket(req, socket, head) {
 	return new WebSocketConnection(socket, head);
 }
 
+const HEARTBEAT_EVERY = 10_000;
+const HEARTBEAT_DEAD = 30_000;
+
 class WebSocketConnection {
 	constructor(socket, head) {
 		this.socket = socket;
 		this.open = true;
-		this.handlers = { message: [], close: [] };
+		this.handlers = { message: [], binary: [], close: [] };
 		this.buf = head?.length ? Buffer.from(head) : Buffer.alloc(0);
 		this.parts = [];
+		// A phone that went away without closing (network lost, page killed) answers no ping:
+		// the connection is dropped, so whatever it held (a fitted window) is let go.
+		this.seen = Date.now();
+		this.heartbeat = setInterval(() => {
+			if (Date.now() - this.seen > HEARTBEAT_DEAD) {
+				this.close(1001);
+				socket.destroy();
+			} else this.frame(0x9, Buffer.alloc(0));
+		}, HEARTBEAT_EVERY);
 		socket.on('data', (d) => {
+			this.seen = Date.now();
 			this.buf = Buffer.concat([this.buf, d]);
 			this.parse();
 		});
 		const closed = () => {
+			clearInterval(this.heartbeat);
 			if (!this.open) return;
 			this.open = false;
 			for (const h of this.handlers.close) h();
@@ -83,11 +97,13 @@ class WebSocketConnection {
 			}
 			if (op === 0xa) continue;
 			if (op === 0x1 || op === 0x2 || op === 0x0) {
+				if (op !== 0x0) this.partOp = op;
 				this.parts.push(payload);
 				if (!fin) continue;
 				const data = Buffer.concat(this.parts);
 				this.parts = [];
-				for (const h of this.handlers.message) h(data.toString('utf8'));
+				if (this.partOp === 0x2) for (const h of this.handlers.binary) h(data);
+				else for (const h of this.handlers.message) h(data.toString('utf8'));
 			}
 		}
 	}
@@ -118,6 +134,7 @@ class WebSocketConnection {
 	}
 
 	close(code = 1000) {
+		clearInterval(this.heartbeat);
 		if (!this.open) return;
 		const p = Buffer.alloc(2);
 		p.writeUInt16BE(code);

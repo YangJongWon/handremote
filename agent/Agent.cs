@@ -70,6 +70,8 @@ namespace HandRemote
 
 		[DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc cb, IntPtr lParam);
 		[DllImport("user32.dll")] public static extern bool IsWindow(IntPtr hwnd);
+		[DllImport("user32.dll")] public static extern bool IsWindowEnabled(IntPtr hwnd);
+		[DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam);
 		[DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hwnd);
 		[DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hwnd);
 		[DllImport("user32.dll")] public static extern bool IsZoomed(IntPtr hwnd);
@@ -356,6 +358,30 @@ namespace HandRemote
 					object pids;
 					r.TryGetValue("pids", out pids);
 					return Names(pids);
+				case "sound":
+					return Sound.Start(Str(r, "mode"), Int(r, "pid", 0));
+				case "soundRead":
+					return Sound.Read();
+				case "mic":
+					if (Str(r, "on") == "True" || Str(r, "on") == "true") return Mic.Start(Str(r, "match"));
+					Mic.Stop();
+					return res;
+				case "micWrite":
+					return Mic.Write(Str(r, "pcm"));
+				case "open":
+					// A finished download: the file itself, or Explorer with it selected.
+					{
+						string path = Str(r, "path") ?? "";
+						if (!File.Exists(path)) throw new FileNotFoundException("gone: the file is no longer there");
+						if (Str(r, "folder") == "True") Process.Start("explorer.exe", "/select,\"" + path + "\"");
+						else Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+						return res;
+					}
+				case "close":
+					// The window's own close (WM_CLOSE): the app may still ask to save first.
+					if (!Native.IsWindow(hwnd)) throw new InvalidOperationException("gone: the window is already closed");
+					res["sent"] = Native.PostMessage(hwnd, 0x0010, IntPtr.Zero, IntPtr.Zero);
+					return res;
 				case "sas":
 					if (!system) throw new InvalidOperationException("only the SYSTEM helper can send Ctrl+Alt+Del");
 					Native.SendSAS(false);
@@ -669,6 +695,12 @@ namespace HandRemote
 			{
 				if (!Native.IsWindow(hwnd)) throw new ArgumentException("window closed");
 				bmp = CaptureWindow(hwnd);
+				IntPtr popup = DialogOf(hwnd);
+				if (popup != IntPtr.Zero)
+				{
+					res["popup"] = popup.ToInt64();
+					res["popupTitle"] = TitleOf(popup);
+				}
 			}
 			using (bmp)
 			{
@@ -687,6 +719,37 @@ namespace HandRemote
 				}
 			}
 			return res;
+		}
+
+		/// <summary>
+		/// A dialog the window opened and waits on (Save As, a message box…): a visible window it
+		/// owns that is a dialog, or any owned window while the owner itself is disabled (modal).
+		/// The phone follows it, since the window behind takes no input meanwhile.
+		/// </summary>
+		static IntPtr DialogOf(IntPtr hwnd)
+		{
+			IntPtr found = IntPtr.Zero;
+			bool ownerOff = !Native.IsWindowEnabled(hwnd);
+			Native.EnumWindows(delegate (IntPtr w, IntPtr l)
+			{
+				if (w == hwnd || !Native.IsWindowVisible(w) || Native.GetWindow(w, Native.GW_OWNER) != hwnd) return true;
+				int ex = Native.GetWindowLong(w, Native.GWL_EXSTYLE);
+				if ((ex & Native.WS_EX_TOOLWINDOW) != 0 && !ownerOff) return true;
+				Native.RECT r;
+				Native.GetWindowRect(w, out r);
+				if (r.Right - r.Left < 120 || r.Bottom - r.Top < 80) return true;
+				if (!ownerOff && ClassOf(w) != "#32770") return true;
+				found = w;
+				return false;
+			}, IntPtr.Zero);
+			return found;
+		}
+
+		static string TitleOf(IntPtr hwnd)
+		{
+			var sb = new StringBuilder(512);
+			Native.GetWindowText(hwnd, sb, sb.Capacity);
+			return sb.ToString();
 		}
 
 		static Bitmap CaptureWindow(IntPtr hwnd)
@@ -849,8 +912,17 @@ namespace HandRemote
 			int y = b.Top + (int)Math.Round(Math.Max(0, Math.Min(1, fy)) * (b.Bottom - b.Top - 1));
 			if (t != "move" && t != "up") Activate(hwnd);
 			// Another window (always on top, a toast) may still cover that spot: never click it instead.
-			if (hwnd != IntPtr.Zero && t != "up" && !PointIsOn(hwnd, x, y))
-				throw new InvalidOperationException("covered: another window covers that spot on the PC, so nothing was sent");
+			// Right after the window came to the front Windows may not have restacked it yet (a
+			// dialog over a maximized window of the same program): raised and checked again first.
+			if (hwnd != IntPtr.Zero && t != "up" && t != "move")
+			{
+				for (int attempt = 0; attempt < 4 && !PointIsOn(hwnd, x, y); attempt++)
+				{
+					Native.SetWindowPos(hwnd, IntPtr.Zero /* HWND_TOP */, 0, 0, 0, 0, Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
+					Thread.Sleep(50 + attempt * 50);
+				}
+				if (!PointIsOn(hwnd, x, y)) throw new InvalidOperationException("covered: another window covers that spot on the PC, so nothing was sent");
+			}
 			Native.SetCursorPos(x, y);
 			switch (t)
 			{
@@ -986,6 +1058,472 @@ namespace HandRemote
 	}
 
 	/// <summary>The notification area through UI Automation: Windows 10 toolbars, Windows 11 buttons.</summary>
+	// ------------------------------------------------------------------ sound
+	//
+	// What the PC plays, for the phone: the whole PC (the default speakers' loopback) or one
+	// program and its child processes (process loopback, Windows 10 2004+). Captured as
+	// 48 kHz stereo 16-bit, sent as 24 kHz mono 16-bit (48 KB/s) through Sound.Read().
+
+	[ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
+	class MMDeviceEnumeratorCo { }
+
+	[ComImport, Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	interface IMMDeviceEnumerator
+	{
+		void EnumAudioEndpoints(int dataFlow, int stateMask, out IMMDeviceCollection devices);
+		void GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice endpoint);
+	}
+
+	[ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	interface IMMDevice
+	{
+		void Activate(ref Guid iid, int clsCtx, IntPtr activationParams, [MarshalAs(UnmanagedType.IUnknown)] out object iface);
+		void OpenPropertyStore(int access, out IPropertyStore store);
+	}
+
+	[ComImport, Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	interface IAudioClient
+	{
+		void Initialize(int shareMode, int streamFlags, long bufferDuration, long periodicity, IntPtr format, IntPtr sessionGuid);
+		void GetBufferSize(out uint frames);
+		void GetStreamLatency(out long latency);
+		void GetCurrentPadding(out uint padding);
+		void IsFormatSupported(int shareMode, IntPtr format, out IntPtr closest);
+		void GetMixFormat(out IntPtr format);
+		void GetDevicePeriod(out long defaultPeriod, out long minimumPeriod);
+		void Start();
+		void Stop();
+		void Reset();
+		void SetEventHandle(IntPtr handle);
+		void GetService(ref Guid iid, [MarshalAs(UnmanagedType.IUnknown)] out object service);
+	}
+
+	[ComImport, Guid("C8ADBD64-E71E-48a0-A4DE-185C395CD317"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	interface IAudioCaptureClient
+	{
+		void GetBuffer(out IntPtr data, out uint frames, out uint flags, out ulong devicePosition, out ulong qpcPosition);
+		void ReleaseBuffer(uint frames);
+		void GetNextPacketSize(out uint frames);
+	}
+
+	[ComImport, Guid("72A22D78-CDE4-431D-B8CC-843A71199B6D"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	public interface IActivateAudioInterfaceAsyncOperation
+	{
+		void GetActivateResult(out int hr, [MarshalAs(UnmanagedType.IUnknown)] out object iface);
+	}
+
+	[ComImport, Guid("41D949AB-9862-444A-80F6-C261334DA5EB"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	public interface IActivateAudioInterfaceCompletionHandler
+	{
+		void ActivateCompleted(IActivateAudioInterfaceAsyncOperation op);
+	}
+
+	[ComImport, Guid("94ea2b94-e9cc-49e0-c0ff-ee64ca8f5b90"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	public interface IAgileObject { }
+
+	[ComVisible(true), ClassInterface(ClassInterfaceType.None)]
+	public class ActivateHandler : IActivateAudioInterfaceCompletionHandler, IAgileObject
+	{
+		public readonly ManualResetEvent Done = new ManualResetEvent(false);
+		public int Hr = -1;
+		public object Client;
+		public void ActivateCompleted(IActivateAudioInterfaceAsyncOperation op)
+		{
+			try
+			{
+				op.GetActivateResult(out Hr, out Client);
+			}
+			catch (Exception) { Hr = -1; }
+			Done.Set();
+		}
+	}
+
+	public static class Sound
+	{
+		[DllImport("Mmdevapi.dll", ExactSpelling = true, PreserveSig = false)]
+		static extern void ActivateAudioInterfaceAsync([MarshalAs(UnmanagedType.LPWStr)] string path, [MarshalAs(UnmanagedType.LPStruct)] Guid riid, IntPtr activationParams, IActivateAudioInterfaceCompletionHandler handler, out IActivateAudioInterfaceAsyncOperation op);
+
+		const int Rate = 24000;
+		const int MaxBytes = Rate * 2 * 2; // two seconds kept when nobody reads
+		const int LOOPBACK = 0x00020000, EVENTCALLBACK = 0x00040000, AUTOCONVERTPCM = unchecked((int)0x80000000), SRC_DEFAULT_QUALITY = 0x08000000;
+		static readonly Guid IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
+		static readonly Guid IID_IAudioCaptureClient = new Guid("C8ADBD64-E71E-48a0-A4DE-185C395CD317");
+
+		static readonly object gate = new object();
+		static MemoryStream pending = new MemoryStream();
+		static Thread thread;
+		static volatile bool running;
+		static string mode = "off";
+		static int pid;
+		static string error;
+
+		/// <summary>mode: off | window (pid and its children) | all. Waits for the capture to start.</summary>
+		public static Dictionary<string, object> Start(string newMode, int newPid)
+		{
+			var res = new Dictionary<string, object>();
+			newMode = newMode == "window" || newMode == "all" ? newMode : "off";
+			if (newMode == mode && (newMode != "window" || newPid == pid) && (newMode == "off" || running))
+			{
+				res["mode"] = mode;
+				return res;
+			}
+			Stop();
+			mode = newMode;
+			pid = newPid;
+			error = null;
+			if (mode == "off")
+			{
+				res["mode"] = mode;
+				return res;
+			}
+			var ready = new ManualResetEvent(false);
+			running = true;
+			string m = mode;
+			int p = pid;
+			thread = new Thread(() => Run(m, p, ready)) { IsBackground = true, Name = "sound" };
+			thread.SetApartmentState(ApartmentState.MTA);
+			thread.Start();
+			ready.WaitOne(4000);
+			res["mode"] = mode;
+			if (error != null) res["error"] = error;
+			return res;
+		}
+
+		public static void Stop()
+		{
+			running = false;
+			var t = thread;
+			thread = null;
+			if (t != null) t.Join(1000);
+			lock (gate) pending.SetLength(0);
+			mode = "off";
+		}
+
+		/// <summary>Everything captured since the last call, base64 24 kHz mono 16-bit.</summary>
+		public static Dictionary<string, object> Read()
+		{
+			var res = new Dictionary<string, object>();
+			lock (gate)
+			{
+				res["pcm"] = pending.Length > 0 ? Convert.ToBase64String(pending.ToArray()) : "";
+				pending.SetLength(0);
+			}
+			res["rate"] = Rate;
+			res["mode"] = mode;
+			if (error != null) res["error"] = error;
+			return res;
+		}
+
+		static IAudioClient Open(string m, int p)
+		{
+			if (m == "all")
+			{
+				var en = (IMMDeviceEnumerator)new MMDeviceEnumeratorCo();
+				IMMDevice dev;
+				en.GetDefaultAudioEndpoint(0 /* render */, 1 /* multimedia */, out dev);
+				object o;
+				Guid iid = IID_IAudioClient;
+				dev.Activate(ref iid, 23 /* CLSCTX_ALL */, IntPtr.Zero, out o);
+				return (IAudioClient)o;
+			}
+			// AUDIOCLIENT_ACTIVATION_PARAMS { PROCESS_LOOPBACK, pid, INCLUDE_TARGET_PROCESS_TREE }
+			IntPtr prm = Marshal.AllocHGlobal(12);
+			IntPtr pv = Marshal.AllocHGlobal(24);
+			try
+			{
+				Marshal.WriteInt32(prm, 0, 1);
+				Marshal.WriteInt32(prm, 4, p);
+				Marshal.WriteInt32(prm, 8, 0);
+				for (int i = 0; i < 24; i += 4) Marshal.WriteInt32(pv, i, 0);
+				Marshal.WriteInt16(pv, 0, 65 /* VT_BLOB */);
+				Marshal.WriteInt32(pv, 8, 12);
+				Marshal.WriteIntPtr(pv, IntPtr.Size == 8 ? 16 : 12, prm);
+				var h = new ActivateHandler();
+				IActivateAudioInterfaceAsyncOperation op;
+				ActivateAudioInterfaceAsync("VAD\\Process_Loopback", IID_IAudioClient, pv, h, out op);
+				if (!h.Done.WaitOne(3000)) throw new TimeoutException("sound: the program's audio did not open");
+				if (h.Hr != 0 || h.Client == null) throw new InvalidOperationException("sound: the program's audio did not open (0x" + h.Hr.ToString("x8") + ")");
+				return (IAudioClient)h.Client;
+			}
+			finally
+			{
+				Marshal.FreeHGlobal(pv);
+				Marshal.FreeHGlobal(prm);
+			}
+		}
+
+		static void Run(string m, int p, ManualResetEvent ready)
+		{
+			IntPtr fmt = IntPtr.Zero;
+			IAudioClient client = null;
+			var wake = new AutoResetEvent(false);
+			try
+			{
+				client = Open(m, p);
+				// WAVEFORMATEX: PCM, 2 channels, 48000 Hz, 16-bit
+				fmt = Marshal.AllocHGlobal(18);
+				Marshal.WriteInt16(fmt, 0, 1);
+				Marshal.WriteInt16(fmt, 2, 2);
+				Marshal.WriteInt32(fmt, 4, 48000);
+				Marshal.WriteInt32(fmt, 8, 48000 * 4);
+				Marshal.WriteInt16(fmt, 12, 4);
+				Marshal.WriteInt16(fmt, 14, 16);
+				Marshal.WriteInt16(fmt, 16, 0);
+				int flags = LOOPBACK | AUTOCONVERTPCM | SRC_DEFAULT_QUALITY;
+				if (m == "window") flags |= EVENTCALLBACK;
+				client.Initialize(0 /* shared */, flags, 2000000 /* 200 ms */, 0, fmt, IntPtr.Zero);
+				if (m == "window") client.SetEventHandle(wake.SafeWaitHandle.DangerousGetHandle());
+				object o;
+				Guid iid = IID_IAudioCaptureClient;
+				client.GetService(ref iid, out o);
+				var cap = (IAudioCaptureClient)o;
+				client.Start();
+				ready.Set();
+				bool odd = false;
+				int carry = 0;
+				var outBuf = new byte[48000];
+				while (running)
+				{
+					wake.WaitOne(15);
+					uint n;
+					cap.GetNextPacketSize(out n);
+					while (n > 0 && running)
+					{
+						IntPtr data;
+						uint frames, bufFlags;
+						ulong devPos, qpc;
+						cap.GetBuffer(out data, out frames, out bufFlags, out devPos, out qpc);
+						bool silent = (bufFlags & 2) != 0;
+						int o2 = 0;
+						for (int i = 0; i < frames; i++)
+						{
+							int l = silent ? 0 : Marshal.ReadInt16(data, i * 4);
+							int r = silent ? 0 : Marshal.ReadInt16(data, i * 4 + 2);
+							int mono = (l + r) / 2;
+							if (!odd)
+							{
+								carry = mono;
+								odd = true;
+								continue;
+							}
+							odd = false;
+							int s = (carry + mono) / 2;
+							if (o2 + 2 > outBuf.Length) break;
+							outBuf[o2++] = (byte)(s & 0xff);
+							outBuf[o2++] = (byte)((s >> 8) & 0xff);
+						}
+						cap.ReleaseBuffer(frames);
+						lock (gate)
+						{
+							pending.Write(outBuf, 0, o2);
+							if (pending.Length > MaxBytes)
+							{
+								var keep = pending.ToArray();
+								pending.SetLength(0);
+								pending.Write(keep, keep.Length - Rate, Rate); // the last half second
+							}
+						}
+						cap.GetNextPacketSize(out n);
+					}
+				}
+				client.Stop();
+			}
+			catch (Exception e)
+			{
+				error = e.Message.StartsWith("sound:") ? e.Message : "sound: " + e.Message;
+				running = false;
+			}
+			finally
+			{
+				ready.Set();
+				if (fmt != IntPtr.Zero) Marshal.FreeHGlobal(fmt);
+				if (client != null) Marshal.ReleaseComObject(client);
+			}
+		}
+	}
+
+	[ComImport, Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	interface IMMDeviceCollection
+	{
+		void GetCount(out uint count);
+		void Item(uint index, out IMMDevice device);
+	}
+
+	[ComImport, Guid("886d8eeb-8cf2-4446-8d02-cdba1dbdcf99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	interface IPropertyStore
+	{
+		void GetCount(out uint count);
+		void GetAt(uint index, out PropKey key);
+		void GetValue(ref PropKey key, IntPtr value);
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	struct PropKey
+	{
+		public Guid fmtid;
+		public int pid;
+	}
+
+	[ComImport, Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+	interface IAudioRenderClient
+	{
+		void GetBuffer(uint frames, out IntPtr data);
+		void ReleaseBuffer(uint frames, uint flags);
+	}
+
+	// ------------------------------------------------------------------ microphone
+	//
+	// The phone's microphone into PC programs. Windows has no way for a program to add a
+	// microphone, so this plays into a virtual cable driver (VB-CABLE): what is played into
+	// "CABLE Input" comes out of the "CABLE Output" microphone. 24 kHz mono 16-bit in,
+	// 48 kHz stereo 16-bit out; kept under ~250 ms behind.
+	public static class Mic
+	{
+		[DllImport("ole32.dll")] static extern int PropVariantClear(IntPtr pv);
+		static readonly Guid IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
+		static readonly Guid IID_IAudioRenderClient = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
+		const int AUTOCONVERTPCM = unchecked((int)0x80000000), SRC_DEFAULT_QUALITY = 0x08000000;
+
+		static IAudioClient client;
+		static IAudioRenderClient render;
+		static uint bufferFrames;
+		static bool started;
+		static string device;
+
+		static string FriendlyName(IMMDevice dev)
+		{
+			IPropertyStore store;
+			dev.OpenPropertyStore(0 /* read */, out store);
+			var key = new PropKey { fmtid = new Guid("a45c254e-df1c-4efd-8020-67d146a850e0"), pid = 14 };
+			IntPtr pv = Marshal.AllocHGlobal(24);
+			try
+			{
+				for (int i = 0; i < 24; i += 4) Marshal.WriteInt32(pv, i, 0);
+				store.GetValue(ref key, pv);
+				string name = Marshal.ReadInt16(pv) == 31 /* VT_LPWSTR */ ? Marshal.PtrToStringUni(Marshal.ReadIntPtr(pv, 8)) : null;
+				PropVariantClear(pv);
+				return name;
+			}
+			finally
+			{
+				Marshal.FreeHGlobal(pv);
+			}
+		}
+
+		/// <summary>Opens the playback device whose name contains `match` ("CABLE Input" by default).</summary>
+		public static Dictionary<string, object> Start(string match)
+		{
+			var res = new Dictionary<string, object>();
+			if (string.IsNullOrEmpty(match)) match = "CABLE Input";
+			if (client != null && device != null && device.IndexOf(match, StringComparison.OrdinalIgnoreCase) >= 0)
+			{
+				res["device"] = device;
+				return res;
+			}
+			Stop();
+			var en = (IMMDeviceEnumerator)new MMDeviceEnumeratorCo();
+			IMMDeviceCollection all;
+			en.EnumAudioEndpoints(0 /* render */, 1 /* active */, out all);
+			uint count;
+			all.GetCount(out count);
+			IMMDevice found = null;
+			string name = null;
+			for (uint i = 0; i < count && found == null; i++)
+			{
+				IMMDevice d;
+				all.Item(i, out d);
+				string n = FriendlyName(d);
+				if (n != null && n.IndexOf(match, StringComparison.OrdinalIgnoreCase) >= 0)
+				{
+					found = d;
+					name = n;
+				}
+			}
+			if (found == null) throw new InvalidOperationException("no-cable: no playback device named " + match + " (install VB-CABLE)");
+			object o;
+			Guid iid = IID_IAudioClient;
+			found.Activate(ref iid, 23, IntPtr.Zero, out o);
+			var c = (IAudioClient)o;
+			IntPtr fmt = Marshal.AllocHGlobal(18);
+			try
+			{
+				Marshal.WriteInt16(fmt, 0, 1);
+				Marshal.WriteInt16(fmt, 2, 2);
+				Marshal.WriteInt32(fmt, 4, 48000);
+				Marshal.WriteInt32(fmt, 8, 48000 * 4);
+				Marshal.WriteInt16(fmt, 12, 4);
+				Marshal.WriteInt16(fmt, 14, 16);
+				Marshal.WriteInt16(fmt, 16, 0);
+				c.Initialize(0, AUTOCONVERTPCM | SRC_DEFAULT_QUALITY, 5000000 /* 500 ms */, 0, fmt, IntPtr.Zero);
+			}
+			finally
+			{
+				Marshal.FreeHGlobal(fmt);
+			}
+			c.GetBufferSize(out bufferFrames);
+			Guid rid = IID_IAudioRenderClient;
+			object r;
+			c.GetService(ref rid, out r);
+			client = c;
+			render = (IAudioRenderClient)r;
+			started = false;
+			device = name;
+			res["device"] = name;
+			return res;
+		}
+
+		public static void Stop()
+		{
+			if (client != null)
+			{
+				try
+				{
+					if (started) client.Stop();
+				}
+				catch (Exception) { }
+				Marshal.ReleaseComObject(client);
+			}
+			client = null;
+			render = null;
+			started = false;
+			device = null;
+		}
+
+		/// <summary>Plays base64 24 kHz mono 16-bit; drops what would put it over ~250 ms behind.</summary>
+		public static Dictionary<string, object> Write(string b64)
+		{
+			var res = new Dictionary<string, object>();
+			if (client == null) throw new InvalidOperationException("mic-off: the microphone is not on");
+			byte[] pcm = Convert.FromBase64String(b64 ?? "");
+			int samples = pcm.Length / 2;
+			uint padding;
+			client.GetCurrentPadding(out padding);
+			uint limit = Math.Min(bufferFrames, 48000 / 4);
+			uint room = padding >= limit ? 0 : limit - padding;
+			uint frames = (uint)Math.Min(room, (uint)(samples * 2));
+			if (frames > 0)
+			{
+				IntPtr data;
+				render.GetBuffer(frames, out data);
+				for (int i = 0; i < frames; i++)
+				{
+					short s = BitConverter.ToInt16(pcm, (i / 2) * 2);
+					Marshal.WriteInt16(data, i * 4, s);
+					Marshal.WriteInt16(data, i * 4 + 2, s);
+				}
+				render.ReleaseBuffer(frames, 0);
+				if (!started)
+				{
+					client.Start();
+					started = true;
+				}
+			}
+			res["played"] = (int)frames;
+			res["queued"] = (int)(padding + frames);
+			return res;
+		}
+	}
+
 	public static class Tray
 	{
 		static List<KeyValuePair<string, System.Windows.Automation.AutomationElement>> Items()

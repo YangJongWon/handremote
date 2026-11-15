@@ -5,7 +5,7 @@
 //
 // It brings its Notepad to the front to type into it: the PC shows that for a few seconds.
 import { execFile, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import { join } from 'node:path';
@@ -60,6 +60,11 @@ function get(path, headers = {}) {
 	});
 }
 
+/** True when the window no longer exists. */
+const notepadGone = (hwnd) =>
+	ps(`Add-Type -Namespace C -Name W -MemberDefinition '[DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);'
+-not [C.W]::IsWindow([IntPtr]${hwnd})`).then((o) => /True/.test(o));
+
 const linkGet = (port, secret) =>
 	new Promise((resolve) =>
 		http
@@ -71,10 +76,13 @@ async function main() {
 	rmSync(OUT, { recursive: true, force: true });
 	mkdirSync(OUT, { recursive: true });
 	const home = mkdtempSync(join(os.tmpdir(), 'handremote-check-'));
+	// A Downloads folder of its own: the real one is never written to or opened.
+	const downloadsDir = join(home, 'downloads-check');
+	mkdirSync(downloadsDir);
 	console.log(`handremote check: ${deviceNames.join(', ')} · data ${home}`);
 
 	const server = spawn(process.execPath, [join(ROOT, 'bin/handremote.mjs'), '--local', '--no-remote', '--port', String(PORT)], {
-		env: { ...process.env, HANDREMOTE_HOME: home },
+		env: { ...process.env, HANDREMOTE_HOME: home, HANDREMOTE_DOWNLOADS: downloadsDir },
 		stdio: ['ignore', 'pipe', 'pipe'],
 		windowsHide: true,
 	});
@@ -102,12 +110,12 @@ async function main() {
 			assert(r.statusCode === 200, `status ${r.statusCode}`);
 		});
 
-		browser = await chromium.launch();
+		browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
 		for (const name of deviceNames) {
 			const dev = DEVICES[name];
 			assert(dev, `unknown device ${name}`);
 			console.log(`\n${name}`);
-			const context = await browser.newContext({ ...dev, locale: 'ko-KR' });
+			const context = await browser.newContext({ ...dev, locale: 'ko-KR', permissions: ['microphone'] });
 			const page = await context.newPage();
 			const errors = [];
 			page.on('pageerror', (e) => errors.push(e.message));
@@ -182,6 +190,133 @@ async function main() {
 				assert(text.startsWith('>'), `Notepad has "${text}"`);
 			});
 
+			// Ctrl+S in the untitled test Notepad opens Save As; Esc cancels it (nothing is saved).
+			await step('dialog: Save As is followed, and Esc comes back to the window', async () => {
+				await page.evaluate(() => viewer.ws.send(JSON.stringify({ t: 'key', vk: 0x53, mods: 'ctrl' })));
+				let dlg = null;
+				for (let i = 0; i < 40 && !dlg; i++) {
+					await sleep(250);
+					dlg = await page.evaluate(() => (viewer.hwnd && viewer.parent ? { hwnd: viewer.hwnd, title: document.getElementById('v-title').textContent } : null));
+				}
+				assert(dlg, 'the viewer did not follow the dialog');
+				await page.waitForFunction(() => document.getElementById('screen').naturalWidth > 0, null, { timeout: 15000 });
+				await sleep(600);
+				await shot('dialog');
+				await page.evaluate(() => viewer.ws.send(JSON.stringify({ t: 'key', vk: 0x1b, mods: '' })));
+				let back = false;
+				for (let i = 0; i < 40 && !back; i++) {
+					await sleep(250);
+					back = await page.evaluate((h) => viewer.hwnd === h && !viewer.parent, win.hwnd);
+				}
+				assert(back, 'did not come back to Notepad');
+				await page.waitForFunction(() => document.getElementById('screen').naturalWidth > 0, null, { timeout: 15000 });
+				return `"${dlg.title}" → back`;
+			});
+
+			await step('sound: the button goes muted → this window → whole PC → muted', async () => {
+				const seen = [];
+				const answers = [];
+				page.on('websocket', () => {});
+				await page.evaluate(() => {
+					window.__soundMsgs = [];
+					const ws = viewer.ws;
+					ws.addEventListener('message', (e) => typeof e.data === 'string' && JSON.parse(e.data).t === 'sound' && window.__soundMsgs.push(JSON.parse(e.data)));
+				});
+				const start = await page.locator('#v-sound').getAttribute('data-mode');
+				for (let i = 0; i < 3; i++) {
+					await page.locator('#v-sound').click();
+					seen.push(await page.locator('#v-sound').getAttribute('data-mode'));
+					await sleep(1200);
+				}
+				const msgs = await page.evaluate(() => window.__soundMsgs);
+				for (const m of msgs) answers.push(`${m.mode}${m.error ? `(${m.error})` : ''}`);
+				assert(start === 'off' && seen.join(',') === 'window,all,off', `modes ${start} → ${seen}`);
+				assert(msgs.length === 3 && msgs.every((m) => !m.error), `PC answered ${answers.join(', ')}`);
+				return `PC: ${answers.join(' → ')}`;
+			});
+
+			// This PC may have no VB-CABLE: then the phone must say how to install it; with it,
+			// the button must stay on and the PC must name the cable.
+			await step('mic: 🎤 turns the microphone on, or shows how to install the cable', async () => {
+				await page.evaluate(() => {
+					window.__micMsgs = [];
+					viewer.ws.addEventListener('message', (e) => typeof e.data === 'string' && JSON.parse(e.data).t === 'mic' && window.__micMsgs.push(JSON.parse(e.data)));
+				});
+				await page.locator('#v-mic').click();
+				await page.waitForFunction(() => window.__micMsgs.length > 0, null, { timeout: 8000 });
+				const [m] = await page.evaluate(() => window.__micMsgs);
+				if (m.error === 'no-cable') {
+					await page.locator('#sheet:not([hidden]) .sheet-steps li').first().waitFor({ timeout: 3000 });
+					await shot('mic-guide');
+					assert((await page.locator('#v-mic').getAttribute('aria-pressed')) === 'false', 'mic button stayed on');
+					await page.locator('#sheet-close').click();
+					return 'no VB-CABLE here: install guide shown';
+				}
+				assert(m.on && m.device, `PC answered ${JSON.stringify(m)}`);
+				await sleep(800);
+				await page.locator('#v-mic').click();
+				return `on → ${m.device}`;
+			});
+
+			await step('drawer: swipe left from the right edge opens the windows, swipe right closes', async () => {
+				const r = await page.locator('#stage').boundingBox();
+				const y = r.y + r.height / 2;
+				await page.mouse.move(r.x + r.width - 6, y);
+				await page.mouse.down();
+				await page.mouse.move(r.x + r.width - 140, y, { steps: 8 });
+				await page.mouse.up();
+				await page.waitForFunction(() => document.getElementById('viewer').classList.contains('drawer-open'), null, { timeout: 3000 });
+				await page.locator(`.drawer-row[aria-current="true"]`).waitFor({ timeout: 5000 });
+				const rows = await page.locator('.drawer-row').count();
+				const d = await page.locator('#drawer').boundingBox();
+				await sleep(300);
+				await shot('drawer');
+				await page.mouse.move(d.x + 30, d.y + d.height / 2);
+				await page.mouse.down();
+				await page.mouse.move(d.x + 160, d.y + d.height / 2, { steps: 8 });
+				await page.mouse.up();
+				await page.waitForFunction(() => !document.getElementById('viewer').classList.contains('drawer-open'), null, { timeout: 3000 });
+				return `${rows} windows, ${Math.round(d.width)} of ${Math.round(r.width)} px`;
+			});
+
+			// The page going away (home screen, or handide hiding its preview) lets go of the
+			// window; coming back lays it out for the phone again.
+			const sizeOf = async () => (await page.evaluate(() => fetch('api/list').then((r) => r.json()))).windows.find((w) => w.hwnd === win.hwnd);
+			const waitSize = async (ok) => {
+				let now;
+				for (let i = 0; i < 24; i++) {
+					await sleep(250);
+					now = await sizeOf();
+					if (now && ok(now)) return now;
+				}
+				throw new Error(`size stayed ${now?.w}x${now?.h} (original ${before.w}x${before.h})`);
+			};
+			const original = (w) => Math.abs(w.w - before.w) <= 2 && Math.abs(w.h - before.h) <= 2;
+			const setHidden = (hidden) =>
+				page.evaluate((h) => {
+					Object.defineProperty(document, 'hidden', { value: h, configurable: true });
+					document.dispatchEvent(new Event('visibilitychange'));
+				}, hidden);
+			await step('leave: the page going away gives the window its size back', async () => {
+				const fitted = await sizeOf();
+				await setHidden(true);
+				const now = await waitSize(original);
+				return `${fitted.w}x${fitted.h} → ${now.w}x${now.h}`;
+			});
+			await step('leave: coming back lays it out for the phone again', async () => {
+				await setHidden(false);
+				const now = await waitSize((w) => !original(w));
+				await page.waitForFunction(() => document.getElementById('screen').naturalWidth > 0, null, { timeout: 15000 });
+				return `${now.w}x${now.h}`;
+			});
+			await step('leave: handide hiding its preview does the same', async () => {
+				await page.evaluate(() => window.postMessage({ handide: 'preview', visible: false }, location.origin));
+				await waitSize(original);
+				await page.evaluate(() => window.postMessage({ handide: 'preview', visible: true }, location.origin));
+				const now = await waitSize((w) => !original(w));
+				return `back to ${now.w}x${now.h}`;
+			});
+
 			await step('close: the window gets its size back', async () => {
 				await page.locator('#v-close').click();
 				let now;
@@ -193,6 +328,63 @@ async function main() {
 						var last = data.windows.filter((w) => w.pid === notepad.pid).map((w) => `${w.hwnd} ${w.kind} ${w.title} ${w.w}x${w.h} min=${w.min}`);
 				}
 				throw new Error(`still ${now?.w}x${now?.h}, was ${before.w}x${before.h}; Notepad windows now: ${JSON.stringify(last)}`);
+			});
+
+			// A second, empty Notepad of its own (nothing to save, so it closes without asking).
+			// "Close all" would reach the user's own Notepads too: it is only looked at, never tapped.
+			await step('close: ✕ → "close this window" closes only that window', async () => {
+				const spare = spawn(join(process.env.SystemRoot, 'System32', 'notepad.exe'), [], { detached: true, stdio: 'ignore' });
+				let exited = false;
+				spare.on('exit', () => (exited = true));
+				try {
+					let w;
+					for (let i = 0; i < 40 && !w; i++) {
+						await page.evaluate(() => document.getElementById('refresh').click());
+						const data = await page.evaluate(() => fetch('api/list').then((r) => r.json()));
+						w = data.windows.find((x) => x.pid === spare.pid);
+						if (!w) await sleep(250);
+					}
+					assert(w, 'spare Notepad not listed');
+					const close = page.locator(`.row-wrap:has(.row[data-hwnd="${w.hwnd}"]) .row-close`);
+					await close.waitFor({ timeout: 8000 });
+					await close.click();
+					const acts = await page.locator('#sheet .sheet-act').allInnerTexts();
+					assert(acts.length === 2 && /notepad/i.test(acts[1]), `sheet actions: ${JSON.stringify(acts)}`);
+					await shot('close-sheet');
+					await page.locator('#sheet .sheet-act').first().click();
+					for (let i = 0; i < 20 && !exited; i++) await sleep(250);
+					assert(exited, 'spare Notepad still running');
+					assert(!(await notepadGone(win.hwnd)), 'the first test Notepad closed too');
+					return acts.join(' | ');
+				} finally {
+					if (!exited) try { process.kill(spare.pid); } catch {}
+				}
+			});
+
+			// A browser finishing a download: written under a temporary name, then renamed.
+			await step('download: a finished download is announced, "folder" opens and shows Explorer', async () => {
+				const file = `check-${name.replace(/\W+/g, '')}-${Date.now()}.txt`;
+				const tmp = join(downloadsDir, `${file}.crdownload`);
+				writeFileSync(tmp, 'handremote check download');
+				await sleep(300);
+				renameSync(tmp, join(downloadsDir, file));
+				await page.locator('#banner.in').waitFor({ timeout: 15000 });
+				const text = await page.locator('#banner').innerText();
+				assert(text.includes(file), `banner: ${text}`);
+				await shot('download-banner');
+				await page.locator('#banner .banner-act').nth(1).click();
+				let shown = null;
+				for (let i = 0; i < 40 && !shown; i++) {
+					await sleep(250);
+					shown = await page.evaluate(() => (viewer.ws && viewer.hwnd ? { hwnd: viewer.hwnd, title: document.getElementById('v-title').textContent } : null));
+				}
+				assert(shown, 'no window was shown after "folder"');
+				// Close the Explorer window it opened (ours: it shows the check's own folder).
+				const ok = /downloads-check/i.test(shown.title);
+				await page.evaluate((h) => fetch('api/close', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ hwnds: [h] }) }), ok ? shown.hwnd : 0);
+				assert(ok, `showed "${shown.title}" instead of the check's folder`);
+				await page.waitForFunction(() => document.getElementById('viewer').hidden, null, { timeout: 8000 });
+				return `"${shown.title}"`;
 			});
 
 			await step('no page errors', async () => assert(!errors.length, errors.join('; ')));
