@@ -369,9 +369,15 @@ namespace HandRemote
 				case "micWrite":
 					return Mic.Write(Str(r, "pcm"));
 				case "open":
-					// A finished download: the file itself, or Explorer with it selected.
+					// A file (or a finished download): the file itself, or Explorer with it selected.
+					// A folder: Explorer on it.
 					{
 						string path = Str(r, "path") ?? "";
+						if (Directory.Exists(path))
+						{
+							Process.Start("explorer.exe", "\"" + path + "\"");
+							return res;
+						}
 						if (!File.Exists(path)) throw new FileNotFoundException("gone: the file is no longer there");
 						if (Str(r, "folder") == "True") Process.Start("explorer.exe", "/select,\"" + path + "\"");
 						else Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
@@ -1521,6 +1527,156 @@ namespace HandRemote
 			res["played"] = (int)frames;
 			res["queued"] = (int)(padding + frames);
 			return res;
+		}
+	}
+
+	// ------------------------------------------------------------------ terminal
+	//
+	// A shell in a pseudo console (ConPTY, Windows 10 1809+), for the phone's terminal: what
+	// the shell writes goes to stdout as is (UTF-8 with VT sequences); stdin carries frames
+	// [type 1 byte][length 4 bytes LE][payload]: 0 = keyboard input, 1 = resize (cols, rows
+	// as two 16-bit LE). The process ends when the shell exits or stdin closes.
+	public static class Pty
+	{
+		[StructLayout(LayoutKind.Sequential)]
+		struct COORD { public short X, Y; }
+
+		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+		struct STARTUPINFO
+		{
+			public int cb;
+			public string lpReserved, lpDesktop, lpTitle;
+			public int dwX, dwY, dwXSize, dwYSize, dwXCountChars, dwYCountChars, dwFillAttribute, dwFlags;
+			public short wShowWindow, cbReserved2;
+			public IntPtr lpReserved2, hStdInput, hStdOutput, hStdError;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		struct STARTUPINFOEX
+		{
+			public STARTUPINFO StartupInfo;
+			public IntPtr lpAttributeList;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		struct PROCESS_INFORMATION { public IntPtr hProcess, hThread; public int dwProcessId, dwThreadId; }
+
+		[DllImport("kernel32.dll", SetLastError = true)] static extern int CreatePseudoConsole(COORD size, IntPtr hInput, IntPtr hOutput, uint flags, out IntPtr hPC);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern int ResizePseudoConsole(IntPtr hPC, COORD size);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern void ClosePseudoConsole(IntPtr hPC);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern bool CreatePipe(out IntPtr hRead, out IntPtr hWrite, IntPtr attrs, int size);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern bool CloseHandle(IntPtr h);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern bool InitializeProcThreadAttributeList(IntPtr list, int count, int flags, ref IntPtr size);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern bool UpdateProcThreadAttribute(IntPtr list, uint flags, IntPtr attr, IntPtr value, IntPtr size, IntPtr prev, IntPtr retSize);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern void DeleteProcThreadAttributeList(IntPtr list);
+		[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+		static extern bool CreateProcessW(string app, StringBuilder cmd, IntPtr pa, IntPtr ta, bool inherit, uint flags, IntPtr env, string dir, ref STARTUPINFOEX si, out PROCESS_INFORMATION pi);
+		[DllImport("kernel32.dll", SetLastError = true)] static extern uint WaitForSingleObject(IntPtr h, uint ms);
+
+		const uint EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
+		static readonly IntPtr PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = new IntPtr(0x00020016);
+
+		static COORD Size(int cols, int rows)
+		{
+			var c = new COORD();
+			c.X = (short)Math.Max(10, Math.Min(500, cols));
+			c.Y = (short)Math.Max(4, Math.Min(300, rows));
+			return c;
+		}
+
+		public static void Run(int cols, int rows, string command, string dir)
+		{
+			IntPtr inRead, inWrite, outRead, outWrite, hPC;
+			if (!CreatePipe(out inRead, out inWrite, IntPtr.Zero, 0) || !CreatePipe(out outRead, out outWrite, IntPtr.Zero, 0))
+				throw new Win32Exception(Marshal.GetLastWin32Error());
+			int hr = CreatePseudoConsole(Size(cols, rows), inRead, outWrite, 0, out hPC);
+			if (hr != 0) throw new Win32Exception(hr, "pty: CreatePseudoConsole failed (Windows 10 1809 or later is needed)");
+			// The pseudo console holds its own copies now.
+			CloseHandle(inRead);
+			CloseHandle(outWrite);
+
+			IntPtr size = IntPtr.Zero;
+			InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref size);
+			IntPtr list = Marshal.AllocHGlobal(size);
+			if (!InitializeProcThreadAttributeList(list, 1, 0, ref size)) throw new Win32Exception(Marshal.GetLastWin32Error());
+			if (!UpdateProcThreadAttribute(list, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, hPC, (IntPtr)IntPtr.Size, IntPtr.Zero, IntPtr.Zero))
+				throw new Win32Exception(Marshal.GetLastWin32Error());
+			var si = new STARTUPINFOEX();
+			si.StartupInfo.cb = Marshal.SizeOf(typeof(STARTUPINFOEX));
+			// This process's own stdin/stdout are pipes (to the server): without this the shell would
+			// inherit them instead of using the pseudo console.
+			si.StartupInfo.dwFlags = 0x00000100; // STARTF_USESTDHANDLES, all three left null
+			si.lpAttributeList = list;
+			PROCESS_INFORMATION pi;
+			if (!CreateProcessW(null, new StringBuilder(command), IntPtr.Zero, IntPtr.Zero, false, EXTENDED_STARTUPINFO_PRESENT, IntPtr.Zero, string.IsNullOrEmpty(dir) ? null : dir, ref si, out pi))
+				throw new Win32Exception(Marshal.GetLastWin32Error(), "pty: the shell did not start");
+
+			int closed = 0;
+			Action closePc = delegate () { if (Interlocked.Exchange(ref closed, 1) == 0) ClosePseudoConsole(hPC); };
+			var stdout = Console.OpenStandardOutput();
+			var output = new FileStream(new Microsoft.Win32.SafeHandles.SafeFileHandle(outRead, true), FileAccess.Read, 1);
+			var input = new FileStream(new Microsoft.Win32.SafeHandles.SafeFileHandle(inWrite, true), FileAccess.Write, 1);
+
+			// The shell's output, as it comes.
+			var pump = new Thread(delegate ()
+			{
+				var buf = new byte[16384];
+				try
+				{
+					int n;
+					while ((n = output.Read(buf, 0, buf.Length)) > 0)
+					{
+						stdout.Write(buf, 0, n);
+						stdout.Flush();
+					}
+				}
+				catch (Exception) { }
+			}) { IsBackground = true };
+			pump.Start();
+
+			// The phone's frames.
+			var reader = new Thread(delegate ()
+			{
+				var stdin = Console.OpenStandardInput();
+				var head = new byte[5];
+				try
+				{
+					while (ReadFull(stdin, head, 5))
+					{
+						int len = BitConverter.ToInt32(head, 1);
+						if (len < 0 || len > (1 << 20)) break;
+						var body = new byte[len];
+						if (!ReadFull(stdin, body, len)) break;
+						if (head[0] == 0) { input.Write(body, 0, len); input.Flush(); }
+						else if (head[0] == 1 && len >= 4) ResizePseudoConsole(hPC, Size(BitConverter.ToUInt16(body, 0), BitConverter.ToUInt16(body, 2)));
+					}
+				}
+				catch (Exception) { }
+				// stdin closed: the phone's side is gone.
+				closePc();
+			}) { IsBackground = true };
+			reader.Start();
+
+			WaitForSingleObject(pi.hProcess, 0xFFFFFFFF);
+			Thread.Sleep(200); // let the last output through
+			try { closePc(); } catch (Exception) { }
+			pump.Join(1000);
+			CloseHandle(pi.hProcess);
+			CloseHandle(pi.hThread);
+			DeleteProcThreadAttributeList(list);
+			Marshal.FreeHGlobal(list);
+		}
+
+		static bool ReadFull(Stream s, byte[] buf, int len)
+		{
+			int got = 0;
+			while (got < len)
+			{
+				int n = s.Read(buf, got, len - got);
+				if (n <= 0) return false;
+				got += n;
+			}
+			return true;
 		}
 	}
 

@@ -6,7 +6,7 @@
 
 const STRINGS = {
 	ko: {
-		dlDone: '다운로드 완료', dlOpen: '열기', dlFolder: '폴더에서 보기', dlLater: '닫기', dlWaiting: 'PC에서 여는 중…', micOn: '마이크 켜짐 · PC에서 "CABLE Output"을 마이크로 고르세요', micOff: '마이크 꺼짐', micDenied: '마이크 권한이 거부되었습니다', micGuideTitle: 'PC에 가상 마이크 드라이버가 필요합니다', micGuide: 'Windows는 프로그램이 마이크를 만들 수 없어서, 무료 가상 오디오 케이블(VB-CABLE)을 PC에 한 번 설치해야 합니다.', micStep1: 'PC에서 vb-audio.com/Cable 을 열어 VB-CABLE Driver를 받습니다.', micStep2: '압축을 풀고 VBCABLE_Setup_x64.exe를 오른쪽 클릭 → 관리자 권한으로 실행 → Install Driver.', micStep3: 'PC를 다시 시작합니다.', micStep4: '통화·녹음 프로그램에서 마이크를 "CABLE Output"(Hi-Fi Cable이면 "Hi-Fi Cable Output")으로 고릅니다.', micCopy: '주소 복사', micCopied: '주소를 복사했습니다', soundOff: '무음', soundWindow: '이 창 소리', soundAll: '전체 소리', soundFailed: '소리를 가져오지 못했습니다', back: '‹ 목록', close: '닫기', closeOne: '이 창 닫기', closeAll: '{proc} 창 {n}개 모두 닫기', closeHint: '저장하지 않은 내용이 있으면 PC에서 저장할지 묻는 창이 뜹니다.', closed: '창 {n}개에 닫기를 보냈습니다', closeFailed: '창 {n}개는 닫지 못했습니다',
+		termOpen: '열린 터미널', termStart: '새로 열기', termEnd: '이 터미널 끝내기', termCurrent: '지금', term: '터미널', termEnded: '터미널이 끝났습니다', termNew: '새 터미널', termType: '명령 또는 입력 (한글 가능)', termRun: '실행', files: '파일', filesTitle: 'PC 파일', fOpen: 'PC에서 열기', fGet: '휴대폰으로 받기', fShow: '탐색기에서 보기', fUp: '휴대폰에서 올리기', fUploaded: '올렸습니다', fUploading: '올리는 중…', fEmpty: '빈 폴더입니다', fNoAccess: '이 폴더는 열 수 없습니다', fMore: '항목이 많아 일부만 표시합니다', fPlaces: '바로가기', fDrives: '드라이브', pDesktop: '바탕 화면', pDownloads: '다운로드', pDocuments: '문서', pPictures: '사진', pHome: '사용자 폴더', dlDone: '다운로드 완료', dlOpen: '열기', dlFolder: '폴더에서 보기', dlLater: '닫기', dlWaiting: 'PC에서 여는 중…', micOn: '마이크 켜짐 · PC에서 "CABLE Output"을 마이크로 고르세요', micOff: '마이크 꺼짐', micDenied: '마이크 권한이 거부되었습니다', micGuideTitle: 'PC에 가상 마이크 드라이버가 필요합니다', micGuide: 'Windows는 프로그램이 마이크를 만들 수 없어서, 무료 가상 오디오 케이블(VB-CABLE)을 PC에 한 번 설치해야 합니다.', micStep1: 'PC에서 vb-audio.com/Cable 을 열어 VB-CABLE Driver를 받습니다.', micStep2: '압축을 풀고 VBCABLE_Setup_x64.exe를 오른쪽 클릭 → 관리자 권한으로 실행 → Install Driver.', micStep3: 'PC를 다시 시작합니다.', micStep4: '통화·녹음 프로그램에서 마이크를 "CABLE Output"(Hi-Fi Cable이면 "Hi-Fi Cable Output")으로 고릅니다.', micCopy: '주소 복사', micCopied: '주소를 복사했습니다', soundOff: '무음', soundWindow: '이 창 소리', soundAll: '전체 소리', soundFailed: '소리를 가져오지 못했습니다', back: '‹ 목록', close: '닫기', closeOne: '이 창 닫기', closeAll: '{proc} 창 {n}개 모두 닫기', closeHint: '저장하지 않은 내용이 있으면 PC에서 저장할지 묻는 창이 뜹니다.', closed: '창 {n}개에 닫기를 보냈습니다', closeFailed: '창 {n}개는 닫지 못했습니다',
 		loading: '불러오는 중…', send: '보내기', type: '입력할 내용', apps: '앱 창', widgets: '위젯', tray: '트레이', web: '웹 앱', servers: '서버·서비스', secure: '보안 화면',
 		secureRow: 'UAC 확인 창 또는 잠금 화면', secureHint: '관리자 승인이나 PIN 입력을 기다리는 중', minimized: '최소화', viewOnly: '보기만', front: '앞', hidden: '숨김',
 		fitPhone: '폰 크기', fitOrig: '원래 크기', none: '없음', offline: 'PC에 연결할 수 없습니다', gone: '창이 닫혔습니다',
@@ -20,7 +20,7 @@ const STRINGS = {
 		path: '경로', cmd: '명령줄', started: '시작', memory: '메모리', ports: '포트', trayHint: '탭: 클릭 · 길게: 오른쪽 클릭', opened: '열린 창이 없습니다', pc: 'PC',
 	},
 	en: {
-		dlDone: 'Download finished', dlOpen: 'Open', dlFolder: 'Show in folder', dlLater: 'Close', dlWaiting: 'Opening on the PC…', micOn: 'Microphone on · pick "CABLE Output" as the microphone on the PC', micOff: 'Microphone off', micDenied: 'Microphone access was denied', micGuideTitle: 'The PC needs a virtual microphone driver', micGuide: 'Windows does not let a program add a microphone, so a free virtual audio cable (VB-CABLE) has to be installed on the PC once.', micStep1: 'On the PC, open vb-audio.com/Cable and download the VB-CABLE Driver.', micStep2: 'Unzip it, right-click VBCABLE_Setup_x64.exe → Run as administrator → Install Driver.', micStep3: 'Restart the PC.', micStep4: 'In the call or recording app, pick "CABLE Output" (with Hi-Fi Cable: "Hi-Fi Cable Output") as the microphone.', micCopy: 'Copy address', micCopied: 'Address copied', soundOff: 'Muted', soundWindow: 'This window', soundAll: 'Whole PC', soundFailed: 'Could not get the sound', back: '‹ List', close: 'Close', closeOne: 'Close this window', closeAll: 'Close all {n} {proc} windows', closeHint: 'An app with unsaved work asks on the PC whether to save it.', closed: 'Asked {n} window(s) to close', closeFailed: '{n} window(s) could not be closed',
+		termOpen: 'Open terminals', termStart: 'Open a new one', termEnd: 'End this terminal', termCurrent: 'now', term: 'Terminal', termEnded: 'The terminal ended', termNew: 'New terminal', termType: 'Command or text', termRun: 'Run', files: 'Files', filesTitle: 'PC files', fOpen: 'Open on the PC', fGet: 'Save to phone', fShow: 'Show in Explorer', fUp: 'Upload from phone', fUploaded: 'Uploaded', fUploading: 'Uploading…', fEmpty: 'Empty folder', fNoAccess: 'This folder cannot be opened', fMore: 'Too many items: some are shown', fPlaces: 'Places', fDrives: 'Drives', pDesktop: 'Desktop', pDownloads: 'Downloads', pDocuments: 'Documents', pPictures: 'Pictures', pHome: 'Home', dlDone: 'Download finished', dlOpen: 'Open', dlFolder: 'Show in folder', dlLater: 'Close', dlWaiting: 'Opening on the PC…', micOn: 'Microphone on · pick "CABLE Output" as the microphone on the PC', micOff: 'Microphone off', micDenied: 'Microphone access was denied', micGuideTitle: 'The PC needs a virtual microphone driver', micGuide: 'Windows does not let a program add a microphone, so a free virtual audio cable (VB-CABLE) has to be installed on the PC once.', micStep1: 'On the PC, open vb-audio.com/Cable and download the VB-CABLE Driver.', micStep2: 'Unzip it, right-click VBCABLE_Setup_x64.exe → Run as administrator → Install Driver.', micStep3: 'Restart the PC.', micStep4: 'In the call or recording app, pick "CABLE Output" (with Hi-Fi Cable: "Hi-Fi Cable Output") as the microphone.', micCopy: 'Copy address', micCopied: 'Address copied', soundOff: 'Muted', soundWindow: 'This window', soundAll: 'Whole PC', soundFailed: 'Could not get the sound', back: '‹ List', close: 'Close', closeOne: 'Close this window', closeAll: 'Close all {n} {proc} windows', closeHint: 'An app with unsaved work asks on the PC whether to save it.', closed: 'Asked {n} window(s) to close', closeFailed: '{n} window(s) could not be closed',
 		loading: 'Loading…', send: 'Send', type: 'Text to type', apps: 'Windows', widgets: 'Widgets', tray: 'Tray', web: 'Web apps', servers: 'Servers', secure: 'Secure screen',
 		secureRow: 'UAC prompt or lock screen', secureHint: 'Waiting for approval or a PIN', minimized: 'minimized', viewOnly: 'view only', front: 'front', hidden: 'hidden',
 		fitPhone: 'Phone size', fitOrig: 'Original', none: 'None', offline: 'Cannot reach the PC', gone: 'The window closed',
@@ -34,7 +34,7 @@ const STRINGS = {
 		path: 'Path', cmd: 'Command line', started: 'Started', memory: 'Memory', ports: 'Ports', trayHint: 'Tap: click · Hold: right-click', opened: 'Nothing opened', pc: 'PC',
 	},
 	ja: {
-		dlDone: 'ダウンロード完了', dlOpen: '開く', dlFolder: 'フォルダーで表示', dlLater: '閉じる', dlWaiting: 'PC で開いています…', micOn: 'マイク オン · PC で「CABLE Output」をマイクに選んでください', micOff: 'マイク オフ', micDenied: 'マイクの許可が拒否されました', micGuideTitle: 'PC に仮想マイクのドライバーが必要です', micGuide: 'Windows ではプログラムがマイクを追加できないため、無料の仮想オーディオケーブル (VB-CABLE) を PC に一度インストールします。', micStep1: 'PC で vb-audio.com/Cable を開き、VB-CABLE Driver をダウンロードします。', micStep2: '展開して VBCABLE_Setup_x64.exe を右クリック → 管理者として実行 → Install Driver。', micStep3: 'PC を再起動します。', micStep4: '通話・録音アプリでマイクを「CABLE Output」(Hi-Fi Cable なら「Hi-Fi Cable Output」)にします。', micCopy: 'アドレスをコピー', micCopied: 'アドレスをコピーしました', soundOff: 'ミュート', soundWindow: 'このウィンドウの音', soundAll: 'PC 全体の音', soundFailed: '音を取得できませんでした', back: '‹ 一覧', close: '閉じる', closeOne: 'このウィンドウを閉じる', closeAll: '{proc} のウィンドウ {n} 個をすべて閉じる', closeHint: '保存していない内容があると、PC で保存するか確認されます。', closed: '{n} 個のウィンドウに閉じる指示を送りました', closeFailed: '{n} 個のウィンドウは閉じられませんでした',
+		termOpen: '開いているターミナル', termStart: '新しく開く', termEnd: 'このターミナルを終了', termCurrent: '表示中', term: 'ターミナル', termEnded: 'ターミナルが終了しました', termNew: '新しいターミナル', termType: 'コマンドまたは入力', termRun: '実行', files: 'ファイル', filesTitle: 'PC のファイル', fOpen: 'PC で開く', fGet: 'スマホに保存', fShow: 'エクスプローラーで表示', fUp: 'スマホからアップロード', fUploaded: 'アップロードしました', fUploading: 'アップロード中…', fEmpty: '空のフォルダーです', fNoAccess: 'このフォルダーは開けません', fMore: '項目が多いため一部を表示しています', fPlaces: 'よく使う場所', fDrives: 'ドライブ', pDesktop: 'デスクトップ', pDownloads: 'ダウンロード', pDocuments: 'ドキュメント', pPictures: 'ピクチャ', pHome: 'ユーザー フォルダー', dlDone: 'ダウンロード完了', dlOpen: '開く', dlFolder: 'フォルダーで表示', dlLater: '閉じる', dlWaiting: 'PC で開いています…', micOn: 'マイク オン · PC で「CABLE Output」をマイクに選んでください', micOff: 'マイク オフ', micDenied: 'マイクの許可が拒否されました', micGuideTitle: 'PC に仮想マイクのドライバーが必要です', micGuide: 'Windows ではプログラムがマイクを追加できないため、無料の仮想オーディオケーブル (VB-CABLE) を PC に一度インストールします。', micStep1: 'PC で vb-audio.com/Cable を開き、VB-CABLE Driver をダウンロードします。', micStep2: '展開して VBCABLE_Setup_x64.exe を右クリック → 管理者として実行 → Install Driver。', micStep3: 'PC を再起動します。', micStep4: '通話・録音アプリでマイクを「CABLE Output」(Hi-Fi Cable なら「Hi-Fi Cable Output」)にします。', micCopy: 'アドレスをコピー', micCopied: 'アドレスをコピーしました', soundOff: 'ミュート', soundWindow: 'このウィンドウの音', soundAll: 'PC 全体の音', soundFailed: '音を取得できませんでした', back: '‹ 一覧', close: '閉じる', closeOne: 'このウィンドウを閉じる', closeAll: '{proc} のウィンドウ {n} 個をすべて閉じる', closeHint: '保存していない内容があると、PC で保存するか確認されます。', closed: '{n} 個のウィンドウに閉じる指示を送りました', closeFailed: '{n} 個のウィンドウは閉じられませんでした',
 		loading: '読み込み中…', send: '送信', type: '入力する内容', apps: 'ウィンドウ', widgets: 'ウィジェット', tray: 'トレイ', web: 'Web アプリ', servers: 'サーバー', secure: 'セキュア画面',
 		secureRow: 'UAC 確認またはロック画面', secureHint: '承認または PIN を待っています', minimized: '最小化', viewOnly: '表示のみ', front: '前面', hidden: '非表示',
 		fitPhone: 'スマホサイズ', fitOrig: '元のサイズ', none: 'なし', offline: 'PC に接続できません', gone: 'ウィンドウが閉じました',
@@ -48,7 +48,7 @@ const STRINGS = {
 		path: 'パス', cmd: 'コマンドライン', started: '開始', memory: 'メモリ', ports: 'ポート', trayHint: 'タップ: クリック · 長押し: 右クリック', opened: '開いたウィンドウはありません', pc: 'PC',
 	},
 	zh: {
-		dlDone: '下载完成', dlOpen: '打开', dlFolder: '在文件夹中显示', dlLater: '关闭', dlWaiting: '正在电脑上打开…', micOn: '麦克风已开 · 在电脑上选择 "CABLE Output" 作为麦克风', micOff: '麦克风已关', micDenied: '麦克风权限被拒绝', micGuideTitle: '电脑需要虚拟麦克风驱动', micGuide: 'Windows 不允许程序添加麦克风，需要在电脑上安装一次免费的虚拟音频线 (VB-CABLE)。', micStep1: '在电脑上打开 vb-audio.com/Cable，下载 VB-CABLE Driver。', micStep2: '解压后右键 VBCABLE_Setup_x64.exe → 以管理员身份运行 → Install Driver。', micStep3: '重启电脑。', micStep4: '在通话或录音软件中把麦克风选为 "CABLE Output"（Hi-Fi Cable 则为 "Hi-Fi Cable Output"）。', micCopy: '复制地址', micCopied: '地址已复制', soundOff: '静音', soundWindow: '此窗口声音', soundAll: '全部声音', soundFailed: '无法获取声音', back: '‹ 列表', close: '关闭', closeOne: '关闭此窗口', closeAll: '关闭全部 {n} 个 {proc} 窗口', closeHint: '有未保存内容的应用会在电脑上询问是否保存。', closed: '已让 {n} 个窗口关闭', closeFailed: '{n} 个窗口未能关闭',
+		termOpen: '已打开的终端', termStart: '新建', termEnd: '结束此终端', termCurrent: '当前', term: '终端', termEnded: '终端已结束', termNew: '新终端', termType: '命令或输入', termRun: '运行', files: '文件', filesTitle: '电脑文件', fOpen: '在电脑上打开', fGet: '保存到手机', fShow: '在资源管理器中显示', fUp: '从手机上传', fUploaded: '已上传', fUploading: '正在上传…', fEmpty: '空文件夹', fNoAccess: '无法打开此文件夹', fMore: '项目太多，仅显示部分', fPlaces: '常用位置', fDrives: '驱动器', pDesktop: '桌面', pDownloads: '下载', pDocuments: '文档', pPictures: '图片', pHome: '用户文件夹', dlDone: '下载完成', dlOpen: '打开', dlFolder: '在文件夹中显示', dlLater: '关闭', dlWaiting: '正在电脑上打开…', micOn: '麦克风已开 · 在电脑上选择 "CABLE Output" 作为麦克风', micOff: '麦克风已关', micDenied: '麦克风权限被拒绝', micGuideTitle: '电脑需要虚拟麦克风驱动', micGuide: 'Windows 不允许程序添加麦克风，需要在电脑上安装一次免费的虚拟音频线 (VB-CABLE)。', micStep1: '在电脑上打开 vb-audio.com/Cable，下载 VB-CABLE Driver。', micStep2: '解压后右键 VBCABLE_Setup_x64.exe → 以管理员身份运行 → Install Driver。', micStep3: '重启电脑。', micStep4: '在通话或录音软件中把麦克风选为 "CABLE Output"（Hi-Fi Cable 则为 "Hi-Fi Cable Output"）。', micCopy: '复制地址', micCopied: '地址已复制', soundOff: '静音', soundWindow: '此窗口声音', soundAll: '全部声音', soundFailed: '无法获取声音', back: '‹ 列表', close: '关闭', closeOne: '关闭此窗口', closeAll: '关闭全部 {n} 个 {proc} 窗口', closeHint: '有未保存内容的应用会在电脑上询问是否保存。', closed: '已让 {n} 个窗口关闭', closeFailed: '{n} 个窗口未能关闭',
 		loading: '加载中…', send: '发送', type: '要输入的内容', apps: '窗口', widgets: '小组件', tray: '托盘', web: '网页应用', servers: '服务器', secure: '安全屏幕',
 		secureRow: 'UAC 提示或锁屏', secureHint: '正在等待批准或 PIN', minimized: '已最小化', viewOnly: '仅查看', front: '前台', hidden: '隐藏',
 		fitPhone: '手机尺寸', fitOrig: '原始尺寸', none: '无', offline: '无法连接到电脑', gone: '窗口已关闭',
@@ -404,6 +404,311 @@ window.addEventListener('popstate', () => !$('viewer').hidden && closeViewer(fal
 
 $('v-close').addEventListener('click', () => closeViewer());
 
+// ---------------------------------------------------------------- files
+// The PC's folders as a phone list: the usual places and the drives first, then folders
+// down from there. A file: open it on the PC (its window is shown), save it to the phone,
+// or show it in Explorer. Files from the phone go into the folder shown.
+const files = { path: null };
+const PLACE = { desktop: 'pDesktop', downloads: 'pDownloads', documents: 'pDocuments', pictures: 'pPictures', home: 'pHome' };
+const when = (ms) => (ms ? new Date(ms).toLocaleDateString(undefined, { year: '2-digit', month: 'numeric', day: 'numeric' }) : '');
+
+function openFiles() {
+	$('files').hidden = false;
+	if (!history.state?.files) history.pushState({ files: true }, '');
+	showFolder(files.path);
+}
+
+function closeFiles(fromHistory = false) {
+	$('files').hidden = true;
+	if (!fromHistory && history.state?.files) history.back();
+}
+window.addEventListener('popstate', () => !$('files').hidden && $('viewer').hidden && closeFiles(true));
+
+async function showFolder(path) {
+	const list = $('files-list');
+	// The folder's own name (the whole path does not fit a phone's width).
+	$('f-title').textContent = path ? path.split('\\').filter(Boolean).pop() || path : t('filesTitle');
+	$('f-title').title = path || '';
+	$('f-up').hidden = !path;
+	$('f-upload').hidden = !path;
+	list.replaceChildren(h('p', { class: 'empty' }, t('loading')));
+	let data;
+	try {
+		data = await api(`api/files${path ? `?path=${encodeURIComponent(path)}` : ''}`);
+	} catch (err) {
+		list.replaceChildren(h('p', { class: 'empty' }, err.message === 'no access' ? t('fNoAccess') : err.message));
+		files.parent = path ? null : undefined;
+		return;
+	}
+	files.path = path || null;
+	files.parent = data.parent ?? null;
+	list.scrollTop = 0;
+	if (!path) {
+		list.replaceChildren(
+			group(t('fPlaces'), null, data.places.map((p) => row({ icon: '📁', title: t(PLACE[p.key] || 'pHome'), sub: p.path, onTap: () => showFolder(p.path) }))),
+			group(t('fDrives'), null, data.drives.map((d) => row({ icon: '💽', title: d.name, sub: d.path, onTap: () => showFolder(d.path) }))),
+		);
+		return;
+	}
+	const rows = data.entries.map((e) =>
+		row({
+			icon: e.dir ? '📁' : fileIcon(e.name),
+			title: e.name,
+			sub: e.dir ? when(e.mtime) : [e.size != null ? mb(e.size) : null, when(e.mtime)].filter(Boolean).join(' · '),
+			onTap: () => (e.dir ? showFolder(joinPath(path, e.name)) : fileActions(joinPath(path, e.name), e)),
+		}),
+	);
+	list.replaceChildren(...(rows.length ? [h('div', { class: 'rows' }, rows)] : [h('p', { class: 'empty' }, t('fEmpty'))]), ...(data.more ? [h('p', { class: 'note' }, t('fMore'))] : []));
+}
+
+const joinPath = (dir, name) => (dir.endsWith('\\') ? dir + name : `${dir}\\${name}`);
+
+function fileIcon(name) {
+	const ext = (name.split('.').pop() || '').toLowerCase();
+	if (/^(png|jpe?g|gif|webp|bmp|heic|svg)$/.test(ext)) return '🖼';
+	if (/^(mp4|mov|mkv|avi|webm)$/.test(ext)) return '🎞';
+	if (/^(mp3|wav|m4a|flac|ogg)$/.test(ext)) return '🎵';
+	if (/^(zip|7z|rar|gz|tar)$/.test(ext)) return '🗜';
+	if (/^(exe|msi|bat|cmd|ps1)$/.test(ext)) return '⚙';
+	if (/^(pdf)$/.test(ext)) return '📕';
+	return '📄';
+}
+
+function fileActions(path, e) {
+	$('sheet-title').textContent = e.name;
+	const act = (label, fn, cls = '') => h('button', { type: 'button', class: `sheet-act ${cls}`, onclick: () => (($('sheet').hidden = true), fn()) }, label);
+	$('sheet-body').replaceChildren(
+		h('p', { class: 'sheet-hint' }, [e.size != null ? mb(e.size) : null, when(e.mtime)].filter(Boolean).join(' · ')),
+		h(
+			'div',
+			{ class: 'sheet-acts' },
+			act(t('fOpen'), () => openOnPc(() => api('api/files/open', { path })).then(() => !$('viewer').hidden && closeFiles()), 'primary'),
+			act(t('fGet'), () => {
+				const a = h('a', { href: `api/file?path=${encodeURIComponent(path)}`, download: e.name });
+				document.body.append(a);
+				a.click();
+				a.remove();
+			}),
+			act(t('fShow'), () => openOnPc(() => api('api/files/open', { path, how: 'folder' }))),
+		),
+	);
+	$('sheet').hidden = false;
+}
+
+$('f-close').addEventListener('click', () => closeFiles());
+
+// ---------------------------------------------------------------- terminal
+// PowerShell on the PC in a real terminal (xterm.js on the phone, a pseudo console on the
+// PC). It keeps running when the phone leaves: coming back attaches to it again.
+const term = { xterm: null, fit: null, ws: null, id: null, ctrl: false };
+try {
+	term.id = localStorage.getItem('handremote.term') || null;
+} catch {}
+
+function loadScript(src) {
+	return new Promise((resolve, reject) => {
+		const s = h('script', { src });
+		s.onload = resolve;
+		s.onerror = reject;
+		document.head.append(s);
+	});
+}
+
+async function openTerm() {
+	$('term').hidden = false;
+	if (!history.state?.term) history.pushState({ term: true }, '');
+	if (!term.xterm) {
+		document.head.append(h('link', { rel: 'stylesheet', href: 'vendor/xterm.css' }));
+		await loadScript('vendor/xterm.js');
+		await loadScript('vendor/addon-fit.js');
+		term.xterm = new window.Terminal({ fontSize: 13, cursorBlink: true, scrollback: 5000, theme: { background: '#0b0c0f' }, fontFamily: 'ui-monospace, Menlo, Consolas, monospace' });
+		term.fit = new window.FitAddon.FitAddon();
+		term.xterm.loadAddon(term.fit);
+		term.xterm.open($('term-screen'));
+		term.xterm.onData((d) => sendTerm(term.ctrl ? ctrlOf(d) : d));
+		new ResizeObserver(() => fitTerm()).observe($('term-screen'));
+	}
+	fitTerm();
+	connectTerm();
+}
+
+function fitTerm() {
+	if (!term.fit || $('term').hidden) return;
+	try {
+		term.fit.fit();
+	} catch {}
+	if (term.ws?.readyState === 1) term.ws.send(JSON.stringify({ t: 'resize', cols: term.xterm.cols, rows: term.xterm.rows }));
+}
+
+function connectTerm(shell = null) {
+	if (term.ws && term.ws.readyState <= 1) return;
+	const pick = term.id ? `&id=${encodeURIComponent(term.id)}` : shell ? `&shell=${encodeURIComponent(shell)}` : '';
+	const url = new URL(`api/term?cols=${term.xterm.cols}&rows=${term.xterm.rows}${pick}`, location.href);
+	url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+	const ws = new WebSocket(url);
+	ws.binaryType = 'arraybuffer';
+	term.ws = ws;
+	ws.onmessage = (e) => {
+		if (typeof e.data !== 'string') return term.xterm.write(new Uint8Array(e.data));
+		const m = JSON.parse(e.data);
+		if (m.t === 'ready') {
+			term.xterm.reset(); // a resumed terminal is replayed by the PC from its own record
+			term.ready = m;
+			$('term-shell').textContent = `${m.shell?.name || t('term')} ▾`;
+			term.id = m.id;
+			try {
+				localStorage.setItem('handremote.term', m.id);
+			} catch {}
+			fitTerm();
+		} else if (m.t === 'exit') {
+			term.id = null;
+			try {
+				localStorage.removeItem('handremote.term');
+			} catch {}
+			term.xterm.write(`\r\n\x1b[90m[${t('termEnded')}]\x1b[0m\r\n`);
+		}
+	};
+	ws.onclose = () => term.ws === ws && (term.ws = null);
+}
+
+function sendTerm(s) {
+	if (!term.ws || term.ws.readyState !== 1) return connectTerm();
+	term.ws.send(new TextEncoder().encode(s));
+}
+
+/** Ctrl held from the key bar: the next letter as its control character. */
+function ctrlOf(d) {
+	term.ctrl = false;
+	$('term-keys').querySelector('[data-k="ctrl"]').setAttribute('aria-pressed', 'false');
+	const c = d.toUpperCase().charCodeAt(0);
+	return d.length === 1 && c >= 64 && c <= 95 ? String.fromCharCode(c - 64) : d;
+}
+
+function closeTerm(fromHistory = false) {
+	$('term').hidden = true;
+	term.ws?.close(); // the terminal itself keeps running on the PC
+	term.ws = null;
+	if (!fromHistory && history.state?.term) history.back();
+}
+window.addEventListener('popstate', () => !$('term').hidden && closeTerm(true));
+
+const TERM_KEYS = [
+	['Esc', '\x1b'],
+	['Tab', '\t'],
+	['Ctrl', 'ctrl'],
+	['^C', '\x03'],
+	['↑', '\x1b[A'],
+	['↓', '\x1b[B'],
+	['←', '\x1b[D'],
+	['→', '\x1b[C'],
+	['Home', '\x1b[H'],
+	['End', '\x1b[F'],
+	['PgUp', '\x1b[5~'],
+	['PgDn', '\x1b[6~'],
+];
+$('term-keys').replaceChildren(
+	...TERM_KEYS.map(([label, seq]) =>
+		h(
+			'button',
+			{
+				type: 'button',
+				'data-k': seq === 'ctrl' ? 'ctrl' : null,
+				'aria-pressed': seq === 'ctrl' ? 'false' : null,
+				onpointerdown: (e) => e.preventDefault(), // keep the keyboard up
+				onclick: (e) => {
+					if (seq !== 'ctrl') return sendTerm(seq);
+					term.ctrl = !term.ctrl;
+					e.currentTarget.setAttribute('aria-pressed', String(term.ctrl));
+					term.xterm?.focus();
+				},
+			},
+			label,
+		),
+	),
+);
+$('term-form').addEventListener('submit', (e) => {
+	e.preventDefault();
+	const box = $('term-type');
+	sendTerm(`${box.value}\r`);
+	box.value = '';
+});
+// The shell picker: the terminals running on the PC (switch to one), the shells installed
+// there (open a new terminal with one), and ending the one shown.
+function switchTerm(id, shell = null) {
+	term.ws?.close();
+	term.ws = null;
+	term.id = id;
+	try {
+		if (id) localStorage.setItem('handremote.term', id);
+		else localStorage.removeItem('handremote.term');
+	} catch {}
+	term.xterm?.reset();
+	connectTerm(shell);
+}
+
+async function pickShell() {
+	let data;
+	try {
+		data = await api('api/term/list');
+	} catch (err) {
+		return toast(err.message, true);
+	}
+	const close = () => ($('sheet').hidden = true);
+	$('sheet-title').textContent = t('term');
+	const running = data.running.map((r) =>
+		row({
+			icon: r.id === term.id ? '▶' : '›',
+			title: r.name,
+			sub: [r.id === term.id ? t('termCurrent') : null, new Date(r.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })].filter(Boolean).join(' · '),
+			onTap: () => (close(), r.id !== term.id && switchTerm(r.id)),
+		}),
+	);
+	const shells = data.shells.map((s) => row({ icon: '+', title: s.name, sub: s.version || '', onTap: () => (close(), switchTerm(null, s.id)) }));
+	$('sheet-body').replaceChildren(
+		...(running.length ? [h('p', { class: 'sheet-hint' }, t('termOpen')), h('div', { class: 'rows' }, running)] : []),
+		h('p', { class: 'sheet-hint' }, t('termStart')),
+		h('div', { class: 'rows' }, shells),
+		...(term.id
+			? [
+					h('div', { class: 'sheet-acts' },
+						h('button', {
+							type: 'button',
+							class: 'sheet-act danger',
+							onclick: () => {
+								close();
+								term.ws?.send(JSON.stringify({ t: 'kill' }));
+								switchTerm(null);
+							},
+						}, t('termEnd')),
+					),
+				]
+			: []),
+	);
+	$('sheet').hidden = false;
+}
+$('term-shell').addEventListener('click', pickShell);
+$('t-close').addEventListener('click', () => closeTerm());
+$('term-type').placeholder = t('termType');
+$('open-term').addEventListener('click', openTerm);
+document.addEventListener('visibilitychange', () => !document.hidden && !$('term').hidden && connectTerm());
+$('f-up').addEventListener('click', () => (files.parent ? showFolder(files.parent) : showFolder(null)));
+$('open-files').addEventListener('click', openFiles);
+$('f-upload').addEventListener('click', () => $('f-pick').click());
+$('f-pick').addEventListener('change', async () => {
+	const picked = [...$('f-pick').files];
+	$('f-pick').value = '';
+	const dir = files.path;
+	if (!dir || !picked.length) return;
+	for (const f of picked) {
+		toast(`${t('fUploading')} ${f.name}`);
+		const res = await fetch(`api/files/upload?dir=${encodeURIComponent(dir)}&name=${encodeURIComponent(f.name)}`, { method: 'POST', body: f }).catch(() => null);
+		const json = await res?.json().catch(() => null);
+		if (!json?.ok) return toast(json?.error || t('offline'), true);
+	}
+	toast(t('fUploaded'), true);
+	if (files.path === dir) showFolder(dir);
+});
+
 // ---------------------------------------------------------------- finished downloads
 // A download that finished on the PC: say so, and offer to open it or show it in its folder.
 // The window that opens is shown right away. Times are the PC's (the phone's clock may differ).
@@ -449,10 +754,15 @@ function showDownload(d) {
 }
 
 async function openDownload(d, how) {
+	return openOnPc(() => api('api/download/open', { id: d.id, how }));
+}
+
+/** Asks the PC to open something, then shows the window it opened. */
+async function openOnPc(ask) {
 	const before = new Set((last?.windows || []).map((w) => w.hwnd));
 	toast(t('dlWaiting'), true);
 	try {
-		await api('api/download/open', { id: d.id, how });
+		await ask();
 	} catch (err) {
 		return toast(err.message, true);
 	}

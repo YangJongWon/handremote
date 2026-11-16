@@ -21,6 +21,15 @@ import { startTailscale } from './tailscale.mjs';
 import { ensureCert, lanAddresses } from './tls.mjs';
 import { acceptWebSocket } from './ws.mjs';
 import { watchDownloads } from './downloads.mjs';
+import { handleFiles, localPath, uploaded } from './files.mjs';
+import { createTerminals } from './term.mjs';
+
+// xterm.js for the phone's terminal, from node_modules.
+const VENDOR = {
+	'/vendor/xterm.js': '@xterm/xterm/lib/xterm.js',
+	'/vendor/xterm.css': '@xterm/xterm/css/xterm.css',
+	'/vendor/addon-fit.js': '@xterm/addon-fit/lib/addon-fit.js',
+};
 import { HELPER_PIPE, readHelperSecret, helperInstalled } from './helper.mjs';
 
 export const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -94,7 +103,8 @@ export async function startServer(opts) {
 	const linkSecret = crypto.randomBytes(24).toString('base64url');
 	const agents = startAgents({ dataDir, log });
 	const helper = helperClient({ pipe: HELPER_PIPE, secret: readHelperSecret, log });
-	const downloads = watchDownloads({ log });
+	const downloads = watchDownloads({ log, ignore: (path) => uploaded.has(path.toLowerCase()) });
+	const terminals = createTerminals({ cacheDir: join(dataDir, 'cache'), log });
 	const quality = Number(config.quality) || 70;
 
 	// ------------------------------------------------------------ fitted windows
@@ -352,8 +362,22 @@ export async function startServer(opts) {
 				res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'no-cache' });
 				return res.end(await readFile(file));
 			}
+			if (req.method === 'GET' && VENDOR[p]) {
+				const file = fileURLToPath(new URL(`../node_modules/${VENDOR[p]}`, import.meta.url));
+				res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'public, max-age=86400' });
+				return res.end(await readFile(file));
+			}
+			if (p === '/api/term/list') return sendJson(res, 200, { ok: true, ...(await terminals.list()) });
 			if (p === '/api/list') return sendJson(res, 200, await list(ctx));
 			if (p === '/api/state') return sendJson(res, 200, { ok: true, api: API_VERSION, version: VERSION, now: Date.now(), downloads: downloads.recent(), helper: await helperState(ctx) });
+			if (await handleFiles(req, res, url, sendJson)) return;
+			if (p === '/api/files/open' && req.method === 'POST') {
+				const body = await readBody(req);
+				const path = localPath(body.path);
+				if (!path) return sendJson(res, 400, { ok: false, error: 'not a local path' });
+				await agents.control.request('open', { path, folder: body.how === 'folder' }, { urgent: true });
+				return sendJson(res, 200, { ok: true });
+			}
 			if (p === '/api/download/open' && req.method === 'POST') {
 				// Only a download this server saw finish, by its id: never a path from the phone.
 				const body = await readBody(req);
@@ -403,9 +427,11 @@ export async function startServer(opts) {
 
 	function appUpgrade(req, socket, head, ctx) {
 		const url = new URL(req.url, 'http://x');
-		if (url.pathname !== '/api/view') return socket.destroy();
+		if (url.pathname !== '/api/view' && url.pathname !== '/api/term') return socket.destroy();
 		const ws = acceptWebSocket(req, socket, head);
-		if (ws) view(ws, url.searchParams, ctx);
+		if (!ws) return;
+		if (url.pathname === '/api/term') terminals.attach(ws, url.searchParams);
+		else view(ws, url.searchParams, ctx);
 	}
 
 	// ------------------------------------------------------------ main listener (standalone)
@@ -513,6 +539,7 @@ export async function startServer(opts) {
 		closed = true;
 		// Every window still laid out for a phone gets its size back.
 		for (const [hwnd, f] of fitted) if (f.fitted) f.via.request('restore', { hwnd, saved: f.saved }).catch(() => {});
+		terminals.stopAll();
 		try {
 			if (JSON.parse(readFileSync(endpointFile, 'utf8')).pid === process.pid) unlinkSync(endpointFile);
 		} catch {}

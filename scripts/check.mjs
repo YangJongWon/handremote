@@ -179,7 +179,7 @@ async function main() {
 				// Into the text area, left edge of the first line, below the menu bar.
 				await page.touchscreen.tap(box.x + 12, box.y + box.height * 0.3);
 				await sleep(300);
-				await page.locator('.keys button', { hasText: 'Home' }).click();
+				await page.locator('#keys button', { hasText: 'Home' }).click();
 				await page.fill('#type', '>');
 				await page.locator('#typebar button[type=submit]').click();
 				let text = '';
@@ -385,6 +385,101 @@ async function main() {
 				assert(ok, `showed "${shown.title}" instead of the check's folder`);
 				await page.waitForFunction(() => document.getElementById('viewer').hidden, null, { timeout: 8000 });
 				return `"${shown.title}"`;
+			});
+
+			// Only the check's own folder is listed, uploaded into and downloaded from.
+			await step('files: places, a folder, upload from the phone, save to the phone', async () => {
+				await page.locator('#open-files').click();
+				await page.locator('#files-list .group').first().waitFor({ timeout: 8000 });
+				const groups = await page.locator('#files-list .group h2').allInnerTexts();
+				await page.evaluate((d) => showFolder(d), downloadsDir);
+				await page.locator('#files-list .rows .row').first().waitFor({ timeout: 8000 });
+				const up = `upload-${Date.now()}.txt`;
+				await page.locator('#f-pick').setInputFiles({ name: up, mimeType: 'text/plain', buffer: Buffer.from('from the phone') });
+				let saved = '';
+				for (let i = 0; i < 20 && saved !== 'from the phone'; i++) {
+					await sleep(250);
+					try {
+						saved = readFileSync(join(downloadsDir, up), 'utf8');
+					} catch {}
+				}
+				assert(saved === 'from the phone', 'the upload did not reach the folder');
+				await page.locator('#files-list .row', { hasText: up }).waitFor({ timeout: 8000 });
+				await shot('files');
+				const back = await page.evaluate((path) => fetch(`api/file?path=${encodeURIComponent(path)}`).then((r) => r.text()), join(downloadsDir, up));
+				assert(back === 'from the phone', `download gave "${back}"`);
+				await page.locator('#f-close').click();
+				return `${groups.join(', ')}; up and down ${up}`;
+			});
+
+			await step('terminal: PowerShell runs a command, Korean too, and is there again after leaving', async () => {
+				await page.locator('#open-term').click();
+				await page.locator('#term-screen .xterm').waitFor({ timeout: 15000 });
+				const screen = () => page.evaluate(() => {
+					const b = term.xterm.buffer.active;
+					let out = '';
+					for (let i = 0; i < b.length; i++) out += (b.getLine(i)?.translateToString(true) || '') + '\n';
+					return out;
+				});
+				const waitFor = async (re) => {
+					for (let i = 0; i < 60; i++) {
+						const text = await screen();
+						if (re.test(text)) return text;
+						await sleep(250);
+					}
+					throw new Error(`terminal shows: ${(await screen()).trim().slice(-300)}`);
+				};
+				await waitFor(/PS [A-Z]:\\/);
+				await page.fill('#term-type', 'Write-Output "sum=$(20+22) 한글"');
+				await page.locator('#term-form button[type=submit]').click();
+				await waitFor(/sum=42 한글/);
+				const cols = await page.evaluate(() => term.xterm.cols);
+				await shot('terminal');
+				const id = await page.evaluate(() => term.id);
+				await page.locator('#t-close').click();
+				await sleep(500);
+				await page.evaluate(() => (term.ready = null));
+				await page.locator('#open-term').click();
+				await page.waitForFunction(() => term.ready && term.ws?.readyState === 1, null, { timeout: 15000 });
+				const resumed = await page.evaluate(() => term.ready.resumed);
+				await waitFor(/sum=42 한글/); // replayed by the PC into a cleared screen
+				const again = await page.evaluate(() => term.id);
+				assert(resumed && again === id, `a new terminal (${again}, resumed ${resumed}) instead of ${id}`);
+				// The picker: installed shells; a second terminal (Python if installed, else cmd)
+				// next to PowerShell, then back to PowerShell.
+				await page.locator('#term-shell').click();
+				await page.locator('#sheet:not([hidden]) .row').first().waitFor({ timeout: 10000 });
+				const names = await page.locator('#sheet .row .t1').allInnerTexts();
+				const second = names.includes('Python') ? 'Python' : 'Command Prompt';
+				await page.locator('#sheet .row', { hasText: second }).last().click();
+				await page.waitForFunction((n) => term.ready?.shell?.name === n && term.ws?.readyState === 1, second, { timeout: 15000 });
+				if (second === 'Python') {
+					await waitFor(/>>> /);
+					await page.fill('#term-type', 'print(6*7, "파이썬")');
+				} else {
+					await waitFor(/>$/m);
+					await page.fill('#term-type', 'echo 42 파이썬');
+				}
+				await page.locator('#term-form button[type=submit]').click();
+				await waitFor(/42 파이썬/);
+				await shot('terminal-second');
+				const secondId = await page.evaluate(() => term.id);
+				await page.locator('#term-shell').click();
+				await page.locator('#sheet:not([hidden]) .row').first().waitFor({ timeout: 10000 });
+				await page.locator('#sheet .row', { hasText: 'Windows PowerShell' }).first().click();
+				await page.waitForFunction((id) => term.ready?.id === id && term.ws?.readyState === 1, id, { timeout: 15000 });
+				await waitFor(/sum=42/);
+				// end both
+				await page.evaluate(() => term.ws.send(JSON.stringify({ t: 'kill' })));
+				await page.evaluate((other) => {
+					const u = new URL(`api/term?id=${other}`, location.href);
+					u.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+					const w = new WebSocket(u);
+					w.onopen = () => w.send(JSON.stringify({ t: 'kill' }));
+				}, secondId);
+				await sleep(500);
+				await page.locator('#t-close').click();
+				return `${cols} columns, same session after leaving; shells: ${names.join(', ')}; ${second} next to PowerShell`;
 			});
 
 			await step('no page errors', async () => assert(!errors.length, errors.join('; ')));

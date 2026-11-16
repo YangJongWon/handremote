@@ -214,3 +214,23 @@ main { padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); max-width: 72
 .banner-act { border: 0; border-radius: 10px; padding: 9px 14px; font-size: 14px; background: var(--chip); color: var(--fg); }
 .banner-act.primary { background: var(--accent); color: #fff; }
 .banner-acts .banner-act:last-child { margin-left: auto; padding: 9px 12px; }
+
+/* Files: the PC's folders as a full-screen list. */
+.top-acts { display: flex; align-items: center; gap: 6px; }
+#files { position: fixed; inset: 0; z-index: 9; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+#files[hidden] { display: none; }
+.fbar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; min-height: 48px; border-bottom: 1px solid var(--line); }
+.f-title { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files-list { flex: 1; overflow-y: auto; padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); }
+.files-list .group:first-child { margin-top: 4px; }
+
+/* Terminal: xterm.js full screen, a key bar and a box for typing (Korean too). */
+#term { position: fixed; inset: 0; z-index: 9; background: #0b0c0f; color: #e8eaee; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+#term[hidden] { display: none; }
+#term .fbar { background: #15171c; border-bottom-color: #2c313b; }
+#term .chip { background: #232731; border-color: #2c313b; color: #e8eaee; }
+.term-screen { flex: 1; min-height: 0; padding: 4px 0 0 4px; overflow: hidden; }
+#term .keys, #term .typebar { background: #15171c; }
+#term .keys button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+#term .chip.shell { font-weight: 600; }
+#sheet .rows { margin-top: 6px; }

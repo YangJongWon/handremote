@@ -11,8 +11,37 @@
 <body>
 <header id="top">
 	<div class="who"><span class="dot" id="dot"></span><b id="host">PC</b></div>
-	<button type="button" id="refresh" class="icon-btn" aria-label="Refresh">↻</button>
+	<div class="top-acts">
+		<button type="button" id="open-term" class="chip" data-t="term"></button>
+		<button type="button" id="open-files" class="chip" data-t="files"></button>
+		<button type="button" id="refresh" class="icon-btn" aria-label="Refresh">↻</button>
+	</div>
 </header>
+
+<section id="term" hidden>
+	<div class="fbar">
+		<button type="button" class="chip shell" id="term-shell" data-t="term"></button>
+		<span class="f-title"></span>
+		<button type="button" class="chip back" id="t-close" data-t="back"></button>
+	</div>
+	<div class="term-screen" id="term-screen"></div>
+	<div class="keys" id="term-keys"></div>
+	<form class="typebar" id="term-form">
+		<input id="term-type" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send">
+		<button type="submit" class="chip" data-t="termRun"></button>
+	</form>
+</section>
+
+<section id="files" hidden>
+	<div class="fbar">
+		<button type="button" class="icon-btn" id="f-up" aria-label="Up">‹</button>
+		<span class="f-title" id="f-title"></span>
+		<button type="button" class="icon-btn" id="f-upload" aria-label="Upload">⇪</button>
+		<button type="button" class="chip back" id="f-close" data-t="back"></button>
+	</div>
+	<div class="files-list" id="files-list"></div>
+	<input type="file" id="f-pick" multiple hidden>
+</section>
 
 <main id="list" aria-live="polite">
 	<p class="empty" id="loading" data-t="loading"></p>

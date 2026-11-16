@@ -28,7 +28,7 @@ function downloadsDir() {
 	return existsSync(dir) ? dir : null;
 }
 
-export function watchDownloads({ log }) {
+export function watchDownloads({ log, ignore = () => false }) {
 	const dir = downloadsDir();
 	const items = []; // { id, name, path, size, at }
 	let seq = 0;
@@ -55,7 +55,7 @@ export function watchDownloads({ log }) {
 		} catch {
 			return;
 		}
-		if (!s.isFile() || !s.size || Date.now() - s.mtimeMs > RECENT) return;
+		if (!s.isFile() || !s.size || Date.now() - s.mtimeMs > RECENT || ignore(path)) return;
 		const sig = `${s.size}:${s.mtimeMs}`;
 		if (known.get(name) === sig) return;
 		// Still growing: look again shortly.

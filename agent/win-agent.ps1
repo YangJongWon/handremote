@@ -3,7 +3,11 @@
 #   -Mode pipe      the SYSTEM helper's agent in the console session (named pipe)
 #   -Mode launcher  the SYSTEM startup task in session 0 that keeps the pipe agent running
 param(
-	[ValidateSet('stdio', 'pipe', 'launcher')] [string]$Mode = 'stdio',
+	[ValidateSet('stdio', 'pipe', 'launcher', 'pty')] [string]$Mode = 'stdio',
+	[int]$Cols = 80,
+	[int]$Rows = 24,
+	[string]$Shell = 'powershell.exe -NoLogo',
+	[string]$Dir = '',
 	[string]$Cache = (Join-Path $env:TEMP 'handremote'),
 	[int]$ParentPid = 0,
 	[string]$Pipe = 'handremote-helper',
@@ -35,6 +39,7 @@ Add-Type -Path $dll
 
 switch ($Mode) {
 	'stdio' { [HandRemote.Agent]::RunStdio($ParentPid) }
+	'pty' { [HandRemote.Pty]::Run($Cols, $Rows, $Shell, $Dir) }
 	'pipe' { [HandRemote.Agent]::RunPipe($Pipe, $Secret, $UserSid) }
 	'launcher' {
 		$ps = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
