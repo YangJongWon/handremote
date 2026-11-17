@@ -25,6 +25,7 @@ import { watchDownloads } from './downloads.mjs';
 import { handleFiles, localPath, uploaded } from './files.mjs';
 import { createTerminals } from './term.mjs';
 import { createDevices, DEVICE_COOKIE, PERMS } from './devices.mjs';
+import { cableMicName, createCableInstaller } from './cable.mjs';
 
 // xterm.js for the phone's terminal, from node_modules.
 const VENDOR = {
@@ -104,6 +105,7 @@ export async function startServer(opts) {
 	let token = await loadToken(dataDir, opts.newToken);
 	const devices = createDevices({ dataDir, log });
 	const startedAt = Date.now();
+	const cable = createCableInstaller({ dataDir, log });
 	let remoteInfo = { reason: opts.local ? 'this PC only (--local)' : opts.remote === false ? 'off (--no-remote)' : 'starting' };
 	const streams = new Map(); // ws → what each open window view sends now, for the diagnosis
 	const linkSecret = crypto.randomBytes(24).toString('base64url');
@@ -342,7 +344,7 @@ export async function startServer(opts) {
 			try {
 				const r = await agents.sound.request('mic', { on: !!on }, { urgent: true, timeout: 8000 });
 				micOwner = on ? ws : micOwner === ws ? null : micOwner;
-				ws.sendText({ t: 'mic', on: !!on, device: r.device || null });
+				ws.sendText({ t: 'mic', on: !!on, device: r.device || null, pick: cableMicName(r.device) });
 			} catch (err) {
 				if (micOwner === ws) micOwner = null;
 				ws.sendText({ t: 'mic', on: false, error: err.code || 'error', msg: err.message });
@@ -423,6 +425,12 @@ export async function startServer(opts) {
 			if (p === '/api/diag') return sendJson(res, 200, await diagnose(req, ctx));
 			if (p === '/api/diag/speed') return await speedTest(req, res, url);
 			if (p === '/api/service' && req.method === 'POST') return await serviceApi(req, res, ctx);
+			if (p === '/api/mic/install') {
+				// Getting the virtual cable (cable.mjs): installing a driver is the PC owner's call.
+				if (!can(ctx, 'admin') || !can(ctx, 'control')) return sendJson(res, 403, { ok: false, error: 'not allowed on this device (admin)', code: 'perm-admin' });
+				if (req.method === 'POST') return sendJson(res, 200, { ok: true, ...cable.start(!!(await readBody(req)).dry) });
+				return sendJson(res, 200, { ok: true, ...cable.state() });
+			}
 			if (p === '/api/me') return sendJson(res, 200, { ok: true, linked: !!ctx.linked, device: ctx.device ? { id: ctx.device.id, name: ctx.device.name } : null, perms: Object.fromEntries(PERMS.map((k) => [k, can(ctx, k)])) });
 			if (p.startsWith('/api/devices')) return await devicesApi(req, res, p, ctx);
 			// What each permission covers; looking (the list, the windows, the sound) is everyone's.

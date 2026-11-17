@@ -1440,12 +1440,15 @@ namespace HandRemote
 			}
 		}
 
-		/// <summary>Opens the playback device whose name contains `match` ("CABLE Input" by default).</summary>
+		/// <summary>The virtual cables known, in order: VB-CABLE (and Hi-Fi Cable, CABLE-A/B), VoiceMeeter, Virtual Audio Cable.</summary>
+		static readonly string[] Cables = { "CABLE Input", "VoiceMeeter Input", "VoiceMeeter Aux Input", "Virtual Audio Cable" };
+
+		/// <summary>Opens the playback device whose name contains `match`, or the first known cable.</summary>
 		public static Dictionary<string, object> Start(string match)
 		{
 			var res = new Dictionary<string, object>();
-			if (string.IsNullOrEmpty(match)) match = "CABLE Input";
-			if (client != null && device != null && device.IndexOf(match, StringComparison.OrdinalIgnoreCase) >= 0)
+			var wanted = string.IsNullOrEmpty(match) ? Cables : new[] { match };
+			if (client != null && device != null && Array.Exists(wanted, w => device.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0))
 			{
 				res["device"] = device;
 				return res;
@@ -1456,20 +1459,27 @@ namespace HandRemote
 			en.EnumAudioEndpoints(0 /* render */, 1 /* active */, out all);
 			uint count;
 			all.GetCount(out count);
-			IMMDevice found = null;
-			string name = null;
-			for (uint i = 0; i < count && found == null; i++)
+			var names = new List<KeyValuePair<IMMDevice, string>>();
+			for (uint i = 0; i < count; i++)
 			{
 				IMMDevice d;
 				all.Item(i, out d);
-				string n = FriendlyName(d);
-				if (n != null && n.IndexOf(match, StringComparison.OrdinalIgnoreCase) >= 0)
-				{
-					found = d;
-					name = n;
-				}
+				names.Add(new KeyValuePair<IMMDevice, string>(d, FriendlyName(d)));
 			}
-			if (found == null) throw new InvalidOperationException("no-cable: no playback device named " + match + " (install VB-CABLE)");
+			IMMDevice found = null;
+			string name = null;
+			foreach (var w in wanted)
+			{
+				foreach (var kv in names)
+					if (kv.Value != null && kv.Value.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0)
+					{
+						found = kv.Key;
+						name = kv.Value;
+						break;
+					}
+				if (found != null) break;
+			}
+			if (found == null) throw new InvalidOperationException("no-cable: no virtual cable playback device (install VB-CABLE)");
 			object o;
 			Guid iid = IID_IAudioClient;
 			found.Activate(ref iid, 23, IntPtr.Zero, out o);

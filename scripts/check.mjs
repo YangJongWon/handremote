@@ -464,8 +464,15 @@ async function main() {
 					await page.locator('#sheet:not([hidden]) .sheet-steps li').first().waitFor({ timeout: 3000 });
 					await shot('mic-guide');
 					assert((await page.locator('#v-mic').getAttribute('aria-pressed')) === 'false', 'mic button stayed on');
+					// The install button, dry: the official package is fetched and its signature checked,
+					// its setup is never run here (that would ask for administrator rights on this PC).
+					await page.locator('#mic-install').waitFor({ timeout: 3000 });
+					await page.evaluate(() => installCable(true));
+					const phase = await page.locator('#mic-install-state').getAttribute('data-phase');
+					const said = await page.locator('#mic-install-state').innerText();
+					assert(phase === 'ready', `package: ${phase} ${said}`);
 					await page.locator('#sheet-close').click();
-					return 'no VB-CABLE here: install guide shown';
+					return 'no cable here: guide shown; official VB-CABLE fetched and its signature checked (not run)';
 				}
 				assert(m.on && m.device, `PC answered ${JSON.stringify(m)}`);
 				await sleep(800);
