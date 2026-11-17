@@ -287,3 +287,12 @@ button.who { background: none; border: 0; padding: 4px 0; font: inherit; color: 
 .diag-row b.ok { color: var(--ok); }
 .diag-row b.warn { color: #d89614; }
 .diag-row b.bad { color: var(--bad); }
+
+/* Zoom and the pointer mode's cursor (drawn on the phone, moved like a touchpad's). */
+#screen { will-change: transform; }
+#cursor { position: absolute; left: 0; top: 0; width: 18px; height: 27px; pointer-events: none; z-index: 2; overflow: visible; }
+#cursor[hidden] { display: none; }
+#cursor path { fill: #fff; stroke: #000; stroke-width: 1.4; stroke-linejoin: round; }
+#v-zoom { position: absolute; left: 8px; top: 8px; z-index: 3; padding: 4px 10px; font-size: 13px; background: rgba(21, 23, 28, 0.85); }
+#v-zoom[hidden] { display: none; }
+#v-drag { min-width: 40px; font-size: 18px; }

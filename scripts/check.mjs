@@ -298,6 +298,80 @@ async function main() {
 			});
 
 			// Ctrl+S in the untitled test Notepad opens Save As; Esc cancels it (nothing is saved).
+			// Fingers as pointer events on the stage (Playwright's mouse is one pointer only).
+			const touch = (steps) =>
+				page.evaluate(async (steps) => {
+					const stage = document.getElementById('stage');
+					const r = stage.getBoundingClientRect();
+					const fire = (type, id, x, y) =>
+						stage.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: r.left + x, clientY: r.top + y, bubbles: true, cancelable: true }));
+					for (const [type, id, x, y, wait] of steps) {
+						fire(type, id, x, y);
+						await new Promise((res) => setTimeout(res, wait ?? 16));
+					}
+				}, steps);
+			const spreadSteps = (cx, cy) => {
+				const out = [['pointerdown', 1, cx - 30, cy], ['pointerdown', 2, cx + 30, cy]];
+				for (let i = 1; i <= 10; i++) out.push(['pointermove', 1, cx - 30 - i * 10, cy], ['pointermove', 2, cx + 30 + i * 10, cy]);
+				return [...out, ['pointerup', 1, cx - 130, cy], ['pointerup', 2, cx + 130, cy]];
+			};
+
+			await step('zoom: spreading two fingers zooms the picture, one finger pans, the chip goes back', async () => {
+				const box = await page.locator('#stage').boundingBox();
+				const cx = Math.round(box.width / 2);
+				const cy = Math.round(box.height / 2);
+				await touch(spreadSteps(cx, cy));
+				const z1 = await page.evaluate(() => ({ ...zoom }));
+				assert(z1.s > 2, `zoom ${z1.s}`);
+				assert(await page.locator('#v-zoom').isVisible(), 'no zoom chip');
+				const moves = [['pointerdown', 1, cx, cy]];
+				for (let i = 1; i <= 8; i++) moves.push(['pointermove', 1, cx + i * 10, cy + i * 5]);
+				moves.push(['pointerup', 1, cx + 80, cy + 40]);
+				await touch(moves);
+				const z2 = await page.evaluate(() => ({ ...zoom }));
+				assert(z2.x !== z1.x || z2.y !== z1.y, 'one finger did not pan');
+				await shot('zoomed');
+				await page.locator('#v-zoom').click();
+				const z3 = await page.evaluate(() => zoom.s);
+				assert(z3 === 1 && !(await page.locator('#v-zoom').isVisible()), `back to ${z3}`);
+				return `${z1.s.toFixed(1)}×, panned ${Math.round(z2.x - z1.x)},${Math.round(z2.y - z1.y)} px`;
+			});
+
+			await step('pointer: the mode button gives a cursor; a slow move is finer than a fast one; a tap clicks at the cursor', async () => {
+				await page.evaluate(() => {
+					window.__sent = [];
+					const ws = viewer.ws;
+					const orig = ws.send.bind(ws);
+					ws.send = (d) => (typeof d === 'string' && window.__sent.push(JSON.parse(d)), orig(d));
+				});
+				while ((await page.locator('#v-drag').getAttribute('data-mode')) !== 'pointer') await page.locator('#v-drag').click();
+				await page.locator('#cursor').waitFor({ timeout: 3000 });
+				const box = await page.locator('#stage').boundingBox();
+				const y = Math.round(box.height / 2);
+				const before = await page.evaluate(() => cursor.fx);
+				// 60 px slowly (precise), then 60 px fast.
+				const slow = [['pointerdown', 1, 100, y, 30]];
+				for (let i = 1; i <= 12; i++) slow.push(['pointermove', 1, 100 + i * 5, y, 40]);
+				slow.push(['pointerup', 1, 160, y, 30]);
+				await touch(slow);
+				const mid = await page.evaluate(() => cursor.fx);
+				const fast = [['pointerdown', 1, 100, y, 10]];
+				for (let i = 1; i <= 3; i++) fast.push(['pointermove', 1, 100 + i * 20, y, 8]);
+				fast.push(['pointerup', 1, 160, y, 30]);
+				await touch(fast);
+				const after = await page.evaluate(() => cursor.fx);
+				assert(mid > before && after - mid > (mid - before) * 1.5, `slow ${mid - before}, fast ${after - mid}`);
+				await touch([['pointerdown', 1, 50, 50, 40], ['pointerup', 1, 50, 50, 300]]);
+				const sent = await page.evaluate(() => window.__sent.filter((m) => m.t === 'mouse'));
+				const click = sent.find((m) => m.a === 'click');
+				assert(sent.some((m) => m.a === 'move'), 'no cursor moves sent');
+				assert(click && Math.abs(click.fx - after) < 0.001, `click at ${click?.fx} not at the cursor ${after}`);
+				await shot('pointer');
+				while ((await page.locator('#v-drag').getAttribute('data-mode')) !== 'touch') await page.locator('#v-drag').click();
+				assert(await page.locator('#cursor').isHidden(), 'cursor still shown in touch mode');
+				return `cursor ${before.toFixed(2)} → ${mid.toFixed(2)} (slow) → ${after.toFixed(2)} (fast), click at the cursor`;
+			});
+
 			await step('reconnect: a dropped view comes back to the same window, the picture kept', async () => {
 				const before = await page.evaluate(() => viewer.hwnd);
 				await page.evaluate(() => viewer.ws.close()); // as a network drop would
