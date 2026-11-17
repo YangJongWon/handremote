@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // handremote: the PC's windows, widgets, tray and servers on the phone, laid out for it.
 import { helperStatus, installHelper, uninstallHelper } from '../server/helper.mjs';
-import { startServer, VERSION } from '../server/server.mjs';
+import { startServer, VERSION, dataDirDefault } from '../server/server.mjs';
+import { readDevices, writeDevices } from '../server/devices.mjs';
 
 const HELP = `handremote ${VERSION}: your PC's windows, widgets, tray and servers on your phone
 
@@ -10,12 +11,15 @@ const HELP = `handremote ${VERSION}: your PC's windows, widgets, tray and server
                                        windows, UAC prompts, lock and sign-in screens
   handremote helper uninstall          remove it and everything it changed
   handremote helper status
+  handremote devices                   the phones paired, with their permissions
+  handremote devices remove <id>       unpair one (it stops at once, even while running)
 
   --port <n>       port (default 9100)
   --local          this PC only (http://localhost, no certificate)
   --no-remote      skip the Tailscale link (same Wi-Fi only)
   --ts-port <n>    the Tailscale HTTPS port (default 9443; 443 stays handide's)
-  --new-token      replace the access token: every link handed out so far stops working
+  --new-token      replace the PC link: QR codes and links handed out so far stop pairing
+                   new phones (paired ones stay; remove them with "devices remove")
 
 With handide running too, handide's phone menu shows a "PC" tile that opens handremote
 through handide's own address and access token.`;
@@ -32,6 +36,22 @@ async function main(argv) {
 		if (what === 'uninstall') return show(await uninstallHelper({ log }));
 		if (what === 'status') return show(await helperStatus());
 		throw new Error(`unknown: helper ${what}`);
+	}
+	if (argv[0] === 'devices') {
+		const dir = dataDirDefault();
+		const list = readDevices(dir);
+		if (argv[1] === 'remove') {
+			const left = list.filter((d) => d.id !== argv[2]);
+			if (left.length === list.length) throw new Error(`no device ${argv[2] || ''}`);
+			writeDevices(dir, left);
+			return console.log(`removed ${argv[2]}`);
+		}
+		if (!list.length) return console.log('no phones paired yet');
+		for (const d of list) {
+			const perms = Object.entries(d.perms).filter(([, v]) => v).map(([k]) => k);
+			console.log(`${d.id}  ${d.name}  [${perms.join(', ') || 'view only'}]  last seen ${new Date(d.seen).toLocaleString()}`);
+		}
+		return;
 	}
 	if (process.platform !== 'win32') throw new Error('handremote runs on Windows for now (macOS later)');
 	const opt = (name, def) => {

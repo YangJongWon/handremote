@@ -140,6 +140,97 @@ async function main() {
 				return `tray ${data.tray.length}, servers ${data.servers.length}`;
 			});
 
+			// Devices: this phone came in through the PC link, so it is the first device (admin).
+			// A second phone through a view-only invite may look, and nothing else.
+			await step('devices: the PC link pairs this phone as its own device, the first one admin', async () => {
+				const me = await page.evaluate(() => fetch('api/me').then((r) => r.json()));
+				const names = (await context.cookies()).map((c) => c.name);
+				assert(me.device && me.perms.admin && me.perms.control && me.perms.files && me.perms.term, JSON.stringify(me));
+				assert(names.includes('hr-dev') && !names.includes('hr-tkn'), `cookies ${names}`);
+				await page.goto(`http://localhost:${PORT}/?tkn=${encodeURIComponent(token)}`); // the link again: no second device
+				const list = await page.evaluate(() => fetch('api/devices').then((r) => r.json()));
+				assert(list.devices.length === 1, `${list.devices.length} devices`);
+				return `${me.device.name}`;
+			});
+			let guest = null;
+			await step('devices: a view-only invite lets a second phone look, and nothing else', async () => {
+				await page.locator('#open-devices').click();
+				await page.locator('.device').first().waitFor({ timeout: 5000 });
+				await page.locator('#d-add').click();
+				for (const k of ['control', 'files', 'term']) if (await page.locator(`#sheet .perm[data-perm="${k}"].on`).count()) await page.locator(`#sheet .perm[data-perm="${k}"]`).click();
+				await page.locator('#d-make').click();
+				const url = (await page.locator('#d-invite-url').innerText()).trim();
+				await shot('devices-invite');
+				await page.locator('#sheet-close').click();
+				guest = await browser.newContext({ ...dev, locale: 'ko-KR' });
+				const g = await guest.newPage();
+				g.on('pageerror', (e) => errors.push(`guest: ${e.message}`));
+				await g.goto(url);
+				await g.locator(`.row[data-hwnd="${win.hwnd}"]`).waitFor({ timeout: 8000 });
+				const me = await g.evaluate(() => fetch('api/me').then((r) => r.json()));
+				assert(!me.perms.control && !me.perms.files && !me.perms.term && !me.perms.admin, JSON.stringify(me.perms));
+				const codes = await g.evaluate(async () => {
+					const st = async (path, body) => (await fetch(path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {})).status;
+					return { files: await st('api/files'), term: await st('api/term/list'), close: await st('api/close', { hwnds: [] }), devices: await st('api/devices'), list: await st('api/list') };
+				});
+				assert(codes.files === 403 && codes.term === 403 && codes.close === 403 && codes.devices === 403 && codes.list === 200, JSON.stringify(codes));
+				const hidden = await g.evaluate(() => ['open-files', 'open-term', 'open-devices'].every((id) => document.getElementById(id).hidden) && !document.querySelector('.row-close'));
+				assert(hidden, 'files, terminal, devices or close buttons shown');
+				// Typing straight into the socket (past the UI) is refused by the PC too.
+				const answer = await g.evaluate(
+					(hwnd) =>
+						new Promise((resolve) => {
+							const ws = new WebSocket(`ws://${location.host}/api/view?hwnd=${hwnd}&fit=0&w=390&h=700`);
+							ws.onmessage = (e) => {
+								if (typeof e.data !== 'string') return;
+								const m = JSON.parse(e.data);
+								if (m.t === 'ready') ws.send(JSON.stringify({ t: 'text', s: 'must not arrive' }));
+								if (m.t === 'error') (resolve(m.code), ws.close());
+							};
+							setTimeout(() => resolve('no answer'), 8000);
+						}),
+					win.hwnd,
+				);
+				assert(answer === 'perm-control', `typing gave ${answer}`);
+				assert(!(await notepadText(win.hwnd)).includes('must not arrive'), 'the text reached Notepad');
+				const again = await (await browser.newContext()).newPage().then(async (p2) => (await p2.goto(url)).status());
+				assert(again === 403, `the invite worked twice (${again})`);
+				await page.locator('#devices .device').nth(1).waitFor({ timeout: 5000 }).catch(() => {});
+				await page.evaluate(() => showDevices());
+				await page.locator('#devices .device').nth(1).waitFor({ timeout: 5000 });
+				await shot('devices');
+				return 'files, terminal, close, devices refused; typing refused by the PC; invite used up';
+			});
+			await step('devices: unpairing cuts the phone off at once, the last admin stays admin', async () => {
+				const g = guest.pages()[0];
+				const opened = await g.evaluate(
+					(hwnd) =>
+						new Promise((resolve) => {
+							const ws = new WebSocket(`ws://${location.host}/api/view?hwnd=${hwnd}&fit=0&w=390&h=700`);
+							window.__guestWs = ws;
+							ws.onmessage = (e) => typeof e.data === 'string' && JSON.parse(e.data).t === 'ready' && resolve(true);
+							setTimeout(() => resolve(false), 8000);
+						}),
+					win.hwnd,
+				);
+				assert(opened, 'the guest view did not open');
+				page.once('dialog', (d) => d.accept());
+				await page.locator('#devices .device').nth(1).locator('[data-act="remove"]').click();
+				await page.waitForFunction(() => document.querySelectorAll('#devices .device').length === 1, null, { timeout: 5000 });
+				await g.waitForFunction(() => window.__guestWs.readyState === 3, null, { timeout: 5000 });
+				const status = await g.evaluate(() => fetch('api/list').then((r) => r.status));
+				assert(status === 403, `removed device still gets ${status}`);
+				const last = await page.evaluate(async () => {
+					const me = await fetch('api/me').then((r) => r.json());
+					const r = await fetch('api/devices/update', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: me.device.id, perms: { admin: false } }) });
+					return { status: r.status, code: (await r.json()).code };
+				});
+				assert(last.status === 409 && last.code === 'last-admin', JSON.stringify(last));
+				await guest.close();
+				await page.locator('#d-close').click();
+				return 'its open view closed, its requests refused';
+			});
+
 			const before = { w: win.w, h: win.h };
 			let stage;
 			await step('view: the window is laid out at the phone size and streams', async () => {
@@ -310,6 +401,9 @@ async function main() {
 				await page.mouse.move(d.x + 160, d.y + d.height / 2, { steps: 8 });
 				await page.mouse.up();
 				await page.waitForFunction(() => !document.getElementById('viewer').classList.contains('drawer-open'), null, { timeout: 3000 });
+				await sleep(400);
+				const still = await page.evaluate(() => viewer.hwnd);
+				assert(still === win.hwnd, `the swipe also opened window ${still}`);
 				return `${rows} windows, ${Math.round(d.width)} of ${Math.round(r.width)} px`;
 			});
 
@@ -338,8 +432,9 @@ async function main() {
 				return `${fitted.w}x${fitted.h} → ${now.w}x${now.h}`;
 			});
 			await step('leave: coming back lays it out for the phone again', async () => {
+				const dbg = await page.evaluate(() => JSON.stringify({ paused: viewer.paused, fitted: viewer.fitted, ws: !!viewer.ws, hidden: document.getElementById('viewer').hidden }));
 				await setHidden(false);
-				const now = await waitSize((w) => !original(w));
+				const now = await waitSize((w) => !original(w)).catch((e) => { throw new Error(`${e.message} ${dbg}`); });
 				await page.waitForFunction(() => document.getElementById('screen').naturalWidth > 0, null, { timeout: 15000 });
 				return `${now.w}x${now.h}`;
 			});

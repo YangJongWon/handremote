@@ -251,3 +251,20 @@ main { padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); max-width: 72
 .up-row small { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .up-bar { height: 4px; margin-top: 8px; border-radius: 2px; background: var(--chip); overflow: hidden; }
 .up-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.15s; }
+
+/* Paired devices and their permissions. */
+#devices { position: fixed; inset: 0; z-index: 9; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+#devices[hidden] { display: none; }
+.device { padding: 12px 14px; margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.device-head { display: flex; align-items: center; gap: 8px; }
+.device-head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device small { color: var(--muted); font-size: 12px; }
+.perms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.perm { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); font: inherit; font-size: 13.5px; }
+.perm.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.device-acts, .device-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.device-foot { margin-top: 18px; }
+.chip.danger { color: var(--bad); }
+.invite-qr { max-width: 240px; margin: 10px auto 0; background: #fff; border-radius: 8px; }
+.invite-qr svg { display: block; width: 100%; height: auto; }
+.invite-url { font-size: 12px; word-break: break-all; color: var(--muted); margin: 8px 2px 0; }

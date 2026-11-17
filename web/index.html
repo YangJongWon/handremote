@@ -14,6 +14,7 @@
 	<div class="top-acts">
 		<button type="button" id="open-term" class="chip" data-t="term"></button>
 		<button type="button" id="open-files" class="chip" data-t="files"></button>
+		<button type="button" id="open-devices" class="chip" data-t="devices" hidden></button>
 		<button type="button" id="refresh" class="icon-btn" aria-label="Refresh">↻</button>
 	</div>
 </header>
@@ -41,6 +42,14 @@
 	</div>
 	<div class="files-list" id="files-list"></div>
 	<input type="file" id="f-pick" multiple hidden>
+</section>
+
+<section id="devices" hidden>
+	<div class="fbar">
+		<span class="f-title" data-t="devicesTitle"></span>
+		<button type="button" class="chip back" id="d-close" data-t="back"></button>
+	</div>
+	<div class="files-list" id="devices-list"></div>
 </section>
 
 <main id="list" aria-live="polite">

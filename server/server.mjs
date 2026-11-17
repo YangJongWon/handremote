@@ -1,7 +1,7 @@
 // handremote server: the phone UI (web/), the list of the PC's windows, widgets, tray icons
 // and servers, and one WebSocket per window shown on the phone (frames out, input in).
 //
-//   phone ──https──> main listener (0.0.0.0:9100, token cookie)  ──┐
+//   phone ──https──> main listener (0.0.0.0:9100, device cookie) ──┐
 //   phone ──> handide ──> link listener (127.0.0.1:random, secret) ─┴─> app ──> agents (user)
 //                                                                         └──> helper (SYSTEM, pipe)
 import crypto from 'node:crypto';
@@ -23,6 +23,7 @@ import { acceptWebSocket } from './ws.mjs';
 import { watchDownloads } from './downloads.mjs';
 import { handleFiles, localPath, uploaded } from './files.mjs';
 import { createTerminals } from './term.mjs';
+import { createDevices, DEVICE_COOKIE, PERMS } from './devices.mjs';
 
 // xterm.js for the phone's terminal, from node_modules.
 const VENDOR = {
@@ -99,7 +100,8 @@ export async function startServer(opts) {
 	const dataDir = opts.dataDir || dataDirDefault();
 	await mkdir(dataDir, { recursive: true });
 	const config = await loadConfig(dataDir);
-	const token = await loadToken(dataDir, opts.newToken);
+	let token = await loadToken(dataDir, opts.newToken);
+	const devices = createDevices({ dataDir, log });
 	const linkSecret = crypto.randomBytes(24).toString('base64url');
 	const agents = startAgents({ dataDir, log });
 	const helper = helperClient({ pipe: HELPER_PIPE, secret: readHelperSecret, log });
@@ -216,7 +218,8 @@ export async function startServer(opts) {
 	function view(ws, query, ctx) {
 		const hwnd = Number(query.get('hwnd')) || 0;
 		const drive = driverFor(hwnd, ctx);
-		const viewOnly = !drive;
+		const noControl = !can(ctx, 'control'); // this phone may only look
+		const viewOnly = !drive || noControl;
 		const frames = drive?.frames || agents.frames; // elevated windows can still be seen without the helper
 		const control = drive?.control || agents.control;
 		let crc = 0;
@@ -286,7 +289,7 @@ export async function startServer(opts) {
 			} catch (err) {
 				fail(err);
 			}
-			ws.sendText({ t: 'ready', viewOnly, fitted: !!entry?.fitted, helper: drive?.control === helper });
+			ws.sendText({ t: 'ready', viewOnly, noControl, fitted: !!entry?.fitted, helper: drive?.control === helper });
 			tick();
 		})();
 
@@ -363,6 +366,7 @@ export async function startServer(opts) {
 					return ws.sendText({ t: 'fitted', fitted: entry.fitted });
 				}
 				if (m.t === 'sound') return await setSound(String(m.mode || 'off'));
+				if (noControl) return ws.sendText({ t: 'error', code: 'perm-control', msg: 'this device may only look' });
 				if (m.t === 'mic') return await setMic(!!m.on);
 				if (viewOnly) return ws.sendText({ t: 'error', code: 'view-only', msg: 'view only' });
 				const urgent = { urgent: true };
@@ -405,6 +409,11 @@ export async function startServer(opts) {
 				res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'public, max-age=86400' });
 				return res.end(await readFile(file));
 			}
+			if (p === '/api/me') return sendJson(res, 200, { ok: true, linked: !!ctx.linked, device: ctx.device ? { id: ctx.device.id, name: ctx.device.name } : null, perms: Object.fromEntries(PERMS.map((k) => [k, can(ctx, k)])) });
+			if (p.startsWith('/api/devices')) return await devicesApi(req, res, p, ctx);
+			// What each permission covers; looking (the list, the windows, the sound) is everyone's.
+			const need = /^\/api\/term\b/.test(p) ? 'term' : /^\/api\/files?\b/.test(p) ? 'files' : /^\/api\/(close|tray|download\/open)$/.test(p) ? 'control' : null;
+			if (need && !can(ctx, need)) return sendJson(res, 403, { ok: false, error: `not allowed on this device (${need})`, code: `perm-${need}` });
 			if (p === '/api/term/list') return sendJson(res, 200, { ok: true, ...(await terminals.list()) });
 			if (p === '/api/list') return sendJson(res, 200, await list(ctx));
 			if (p === '/api/state') return sendJson(res, 200, { ok: true, api: API_VERSION, version: VERSION, now: Date.now(), downloads: downloads.recent(), helper: await helperState(ctx) });
@@ -463,25 +472,79 @@ export async function startServer(opts) {
 		}
 	}
 
+	// ------------------------------------------------------------ devices and permissions
+	const can = (ctx, perm) => !!ctx?.linked || !!ctx?.device?.perms?.[perm]; // handide's own token is the owner's
+	const sockets = new Map(); // ws → device id: a device changed or removed loses its open views
+	devices.onChange((id) => {
+		for (const [ws, dev] of sockets) if (dev === id) ws.close();
+	});
+	const pcLink = () => (access.links[0]?.url || access.local).replace(/\?.*$/, '');
+
+	async function devicesApi(req, res, p, ctx) {
+		if (!can(ctx, 'admin')) return sendJson(res, 403, { ok: false, error: 'not allowed on this device (admin)', code: 'perm-admin' });
+		if (p === '/api/devices' && req.method === 'GET') return sendJson(res, 200, { ok: true, me: ctx.device?.id || null, devices: devices.list(), perms: PERMS });
+		if (req.method !== 'POST') return sendJson(res, 404, { ok: false, error: 'not found' });
+		const body = await readBody(req);
+		try {
+			if (p === '/api/devices/update') return sendJson(res, 200, { ok: true, device: devices.update(String(body.id), { name: body.name, perms: body.perms }) });
+			if (p === '/api/devices/remove') return (devices.remove(String(body.id)), sendJson(res, 200, { ok: true }));
+		} catch (err) {
+			return sendJson(res, err.code === 'not-found' ? 404 : 409, { ok: false, error: err.message, code: err.code });
+		}
+		if (p === '/api/devices/invite') {
+			const inv = devices.invite(body.perms || {}, body.name);
+			const url = `${pcLink()}?inv=${inv.code}`;
+			return sendJson(res, 200, { ok: true, url, expires: inv.expires, qr: await QRCode.toString(url, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' }) });
+		}
+		if (p === '/api/devices/rotate') {
+			// A new PC link: the old QR codes and links stop pairing; paired devices stay.
+			const old = token;
+			token = await loadToken(dataDir, true);
+			const swap = (u) => u.replace(`tkn=${encodeURIComponent(old)}`, `tkn=${encodeURIComponent(token)}`);
+			access = { ...access, local: swap(access.local), links: access.links.map((l) => ({ ...l, url: swap(l.url) })) };
+			log('the PC link was replaced: the old one no longer pairs');
+			printAccess(access, log).catch(() => {});
+			return sendJson(res, 200, { ok: true });
+		}
+		return sendJson(res, 404, { ok: false, error: 'not found' });
+	}
+
 	function appUpgrade(req, socket, head, ctx) {
 		const url = new URL(req.url, 'http://x');
 		if (url.pathname !== '/api/view' && url.pathname !== '/api/term') return socket.destroy();
+		if (url.pathname === '/api/term' && !can(ctx, 'term')) return socket.destroy();
 		const ws = acceptWebSocket(req, socket, head);
 		if (!ws) return;
+		if (ctx.device) {
+			sockets.set(ws, ctx.device.id);
+			ws.on('close', () => sockets.delete(ws));
+		}
 		if (url.pathname === '/api/term') terminals.attach(ws, url.searchParams);
 		else view(ws, url.searchParams, ctx);
 	}
 
 	// ------------------------------------------------------------ main listener (standalone)
 	const host = opts.local ? '127.0.0.1' : '0.0.0.0';
-	const authed = (req) => sameSecret(cookies(req)[TOKEN_COOKIE], token);
-	const forwarder = createPortForwarder({ authed, log });
+	// Who is asking: the device of its cookie. A phone paired before devices existed (the
+	// shared token cookie) becomes a device on its next page load.
+	const deviceOf = (req) => devices.fromCookie(cookies(req)[DEVICE_COOKIE]);
+	const legacy = (req) => sameSecret(cookies(req)[TOKEN_COOKIE], token);
+	const forwarder = createPortForwarder({ authed: (req) => can({ device: deviceOf(req) }, 'control'), log });
 	let tls = null;
 	if (!opts.local) {
 		const cert = await ensureCert(dataDir, lanAddresses().map((a) => a.ip));
 		tls = { cert: cert.cert, key: cert.key };
 	}
 	let access = { links: [], local: `http://localhost:${opts.port}` };
+	const secure = (req) => (tls || req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '');
+	const deviceCookie = (req, value) => `${DEVICE_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${secure(req)}`;
+	const dropLegacy = (req) => `${TOKEN_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure(req)}`;
+	const paired = (req, res, url, pair) => {
+		url.searchParams.delete('tkn');
+		url.searchParams.delete('inv');
+		res.writeHead(302, { 'set-cookie': [deviceCookie(req, pair.cookie), dropLegacy(req)], location: url.pathname + (url.search || ''), 'cache-control': 'no-store' });
+		return res.end();
+	};
 
 	const mainHandler = async (req, res) => {
 		const url = new URL(req.url, 'http://x');
@@ -489,26 +552,42 @@ export async function startServer(opts) {
 			if (!isLoopback(req) || !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) return sendPage(res, 403, 'This page only opens on the PC itself.');
 			return sendPage(res, 200, await connectHtml(access));
 		}
+		const inv = url.searchParams.get('inv');
+		if (inv) {
+			const pair = devices.redeem(req, inv);
+			if (!pair) return sendPage(res, 403, '초대 링크가 만료되었거나 이미 사용되었습니다. 새 초대를 받으세요.<br>This invite has expired or was already used.');
+			return paired(req, res, url, pair);
+		}
 		const tkn = url.searchParams.get('tkn');
 		if (tkn) {
 			if (!sameSecret(tkn, token)) return sendPage(res, 403, '이 링크는 더 이상 유효하지 않습니다. PC에서 새 링크를 받으세요.<br>This link is no longer valid.');
-			url.searchParams.delete('tkn');
-			res.writeHead(302, {
-				'set-cookie': `${TOKEN_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000${tls || req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : ''}`,
-				location: url.pathname + (url.search || ''),
-				'cache-control': 'no-store',
-			});
-			return res.end();
+			if (deviceOf(req)) {
+				// Already paired (a bookmark with the link in it): no second device.
+				url.searchParams.delete('tkn');
+				res.writeHead(302, { location: url.pathname + (url.search || ''), 'cache-control': 'no-store' });
+				return res.end();
+			}
+			return paired(req, res, url, devices.pairOwner(req));
 		}
 		if (forwarder.handle(req, res)) return;
-		if (!authed(req)) return sendPage(res, 403, 'PC에서 handremote가 보여 준 QR 코드나 링크로 여세요.<br>Open the QR code or link handremote shows on the PC.');
-		return app(req, res, { linked: false });
+		let device = deviceOf(req);
+		if (!device && legacy(req)) {
+			const pair = devices.pairOwner(req);
+			device = pair.device;
+			res.setHeader('set-cookie', [deviceCookie(req, pair.cookie), dropLegacy(req)]);
+		}
+		if (!device) {
+			const was = cookies(req)[DEVICE_COOKIE];
+			return sendPage(res, 403, was ? '이 기기는 연결이 해제되었습니다. 다시 쓰려면 PC의 QR 코드나 새 초대 링크로 여세요.<br>This device was removed. Open the PC\'s QR code or a new invite to use it again.' : 'PC에서 handremote가 보여 준 QR 코드나 링크로 여세요.<br>Open the QR code or link handremote shows on the PC.');
+		}
+		return app(req, res, { linked: false, device });
 	};
 	const mainServer = tls ? https.createServer(tls, mainHandler) : http.createServer(mainHandler);
 	mainServer.on('upgrade', (req, socket, head) => {
 		if (forwarder.upgrade(req, socket, head)) return;
-		if (!authed(req)) return socket.destroy();
-		appUpgrade(req, socket, head, { linked: false });
+		const device = deviceOf(req);
+		if (!device) return socket.destroy();
+		appUpgrade(req, socket, head, { linked: false, device });
 	});
 	// http:// on the same port is sent to https:// (a TLS handshake starts with 0x16).
 	const front = tls
@@ -578,6 +657,7 @@ export async function startServer(opts) {
 		// Every window still laid out for a phone gets its size back.
 		for (const [hwnd, f] of fitted) if (f.fitted) f.via.request('restore', { hwnd, saved: f.saved }).catch(() => {});
 		terminals.stopAll();
+		devices.stop();
 		try {
 			if (JSON.parse(readFileSync(endpointFile, 'utf8')).pid === process.pid) unlinkSync(endpointFile);
 		} catch {}
