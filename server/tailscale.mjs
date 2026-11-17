@@ -59,3 +59,24 @@ export async function startTailscale({ port, httpsPort, tls, log }) {
 		stop: () => spawnSync(cli, ['serve', `--https=${httpsPort}`, 'off'], { windowsHide: true, timeout: 5000, env: CLI_ENV }),
 	};
 }
+
+let peerCache = { at: 0, status: null };
+/**
+ * How a tailnet device reaches this PC: { name, direct, relay } for its Tailscale IP, or
+ * null. "direct" is a peer-to-peer path; otherwise the traffic goes through a DERP relay
+ * ("relay" names it), which is slower.
+ */
+export async function tailscalePeer(ip) {
+	if (Date.now() - peerCache.at > 10000) {
+		const cli = await findCli();
+		let status = null;
+		try {
+			if (cli) status = JSON.parse((await run(cli, ['status', '--json'], 8000)).out);
+		} catch {}
+		peerCache = { at: Date.now(), status };
+	}
+	const peers = Object.values(peerCache.status?.Peer || {});
+	const p = peers.find((x) => (x.TailscaleIPs || []).includes(ip));
+	if (!p) return null;
+	return { name: p.HostName || p.DNSName || ip, os: p.OS || '', direct: !!p.CurAddr, relay: p.Relay || null };
+}

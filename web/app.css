@@ -268,3 +268,22 @@ main { padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); max-width: 72
 .invite-qr { max-width: 240px; margin: 10px auto 0; background: #fff; border-radius: 8px; }
 .invite-qr svg { display: block; width: 100%; height: auto; }
 .invite-url { font-size: 12px; word-break: break-all; color: var(--muted); margin: 8px 2px 0; }
+
+/* The PC's name opens the connection diagnosis. */
+button.who { background: none; border: 0; padding: 4px 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.who-more { color: var(--muted); font-size: 18px; line-height: 1; }
+#diag { position: fixed; inset: 0; z-index: 9; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+#diag[hidden] { display: none; }
+.advice { margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.5; background: var(--card); border: 1px solid var(--line); }
+.advice.ok { border-color: var(--ok); }
+.advice.warn { border-color: #d89614; }
+.advice.bad { border-color: var(--bad); }
+.diag-box { margin-top: 12px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.diag-box h2 { font-size: 13px; color: var(--muted); margin: 10px 0 2px; font-weight: 600; }
+.diag-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.diag-box > .diag-row:first-child, .diag-box h2 + .diag-row { border-top: 0; }
+.diag-row span { flex: 1; color: var(--muted); }
+.diag-row b { font-weight: 600; text-align: right; word-break: break-all; }
+.diag-row b.ok { color: var(--ok); }
+.diag-row b.warn { color: #d89614; }
+.diag-row b.bad { color: var(--bad); }

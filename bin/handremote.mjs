@@ -3,6 +3,7 @@
 import { helperStatus, installHelper, uninstallHelper } from '../server/helper.mjs';
 import { startServer, VERSION, dataDirDefault } from '../server/server.mjs';
 import { readDevices, writeDevices } from '../server/devices.mjs';
+import { installService, serviceStatus, uninstallService } from '../server/service.mjs';
 
 const HELP = `handremote ${VERSION}: your PC's windows, widgets, tray and servers on your phone
 
@@ -11,6 +12,11 @@ const HELP = `handremote ${VERSION}: your PC's windows, widgets, tray and server
                                        windows, UAC prompts, lock and sign-in screens
   handremote helper uninstall          remove it and everything it changed
   handremote helper status
+  handremote service install [opts]    start at logon and again whenever it exits (the
+                                       options are kept, e.g. --port); takes over from
+                                       a handremote started by hand
+  handremote service uninstall         stop it and remove it from logon
+  handremote service status
   handremote devices                   the phones paired, with their permissions
   handremote devices remove <id>       unpair one (it stops at once, even while running)
 
@@ -36,6 +42,13 @@ async function main(argv) {
 		if (what === 'uninstall') return show(await uninstallHelper({ log }));
 		if (what === 'status') return show(await helperStatus());
 		throw new Error(`unknown: helper ${what}`);
+	}
+	if (argv[0] === 'service') {
+		const what = argv[1] || 'status';
+		if (what === 'install') return installService({ args: argv.slice(2), dataDir: dataDirDefault(), log });
+		if (what === 'uninstall') return uninstallService({ log });
+		if (what === 'status') return log(serviceStatus());
+		throw new Error(`unknown: service ${what}`);
 	}
 	if (argv[0] === 'devices') {
 		const dir = dataDirDefault();

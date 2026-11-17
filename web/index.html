@@ -10,7 +10,7 @@
 </head>
 <body>
 <header id="top">
-	<div class="who"><span class="dot" id="dot"></span><b id="host">PC</b></div>
+	<button type="button" class="who" id="open-diag"><span class="dot" id="dot"></span><b id="host">PC</b><span class="who-more">›</span></button>
 	<div class="top-acts">
 		<button type="button" id="open-term" class="chip" data-t="term"></button>
 		<button type="button" id="open-files" class="chip" data-t="files"></button>
@@ -50,6 +50,14 @@
 		<button type="button" class="chip back" id="d-close" data-t="back"></button>
 	</div>
 	<div class="files-list" id="devices-list"></div>
+</section>
+
+<section id="diag" hidden>
+	<div class="fbar">
+		<span class="f-title" data-t="diag"></span>
+		<button type="button" class="chip back" id="dg-close" data-t="back"></button>
+	</div>
+	<div class="files-list" id="diag-list"></div>
 </section>
 
 <main id="list" aria-live="polite">

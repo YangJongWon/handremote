@@ -233,6 +233,22 @@ async function main() {
 
 			const before = { w: win.w, h: win.h };
 			let stage;
+			// The connection screen (never its "start with the PC" switch: that is the real Startup folder).
+			await step('diag: tapping the PC name shows the path, response time, speeds and the PC parts', async () => {
+				await page.locator('#open-diag').click();
+				await page.locator('#dg-run').waitFor({ timeout: 20000 });
+				const rows = await page.locator('#diag .diag-row').allInnerTexts();
+				const get = (label) => (rows.find((r) => r.startsWith(label)) || '').slice(label.length).trim();
+				assert(get('연결 경로') === '이 PC', `path ${get('연결 경로')}`);
+				assert(/^\d+ ms$/.test(get('응답 시간')), `rtt ${get('응답 시간')}`);
+				assert(/Mbps$/.test(get('받기 속도')) && /Mbps$/.test(get('보내기 속도')), 'speeds missing');
+				for (const part of ['화면', '조작', '소리']) assert(/^\d+ ms$/.test(get(part)), `${part}: ${get(part)}`);
+				await shot('diag');
+				await page.locator('#dg-close').click();
+				await page.locator('#diag').waitFor({ state: 'hidden', timeout: 3000 });
+				return `rtt ${get('응답 시간')}, down ${get('받기 속도')}, up ${get('보내기 속도')}`;
+			});
+
 			await step('view: the window is laid out at the phone size and streams', async () => {
 				await page.locator(`.row[data-hwnd="${win.hwnd}"]`).click();
 				await page.waitForFunction(() => document.getElementById('screen').naturalWidth > 0, null, { timeout: 15000 });

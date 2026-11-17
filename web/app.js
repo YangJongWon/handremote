@@ -6,7 +6,7 @@
 
 const STRINGS = {
 	ko: {
-		devices: '기기', devicesTitle: '연결된 기기', dThis: '이 기기', dSeen: '최근 사용', pControl: '조작', pFiles: '파일', pTerm: '터미널', pAdmin: '관리', dLook: '보기는 항상 됩니다', dRename: '이름 바꾸기', dRemove: '연결 해제', dRemoveAsk: '"{name}"의 연결을 끊을까요? 다시 쓰려면 새로 연결해야 합니다.', dRemoved: '연결을 해제했습니다', dAdd: '기기 추가', dAddTitle: '새 기기에 줄 권한', dAddHint: '초대 링크는 10분 동안 한 번만 쓸 수 있습니다.', dMake: '초대 링크 만들기', dInviteHint: '새 기기의 카메라로 QR을 찍거나 링크를 보내세요. {time}까지 유효합니다.', dCopy: '링크 복사', dCopied: '링크를 복사했습니다', dRotate: 'PC 링크 바꾸기', dRotateAsk: '지금까지 나눠 준 QR 코드와 링크로는 새 기기를 더 연결할 수 없게 됩니다. 이미 연결된 기기는 그대로입니다. 바꿀까요?', dRotated: 'PC 링크를 바꿨습니다. 새 QR 코드는 PC에서 localhost:9100/connect 를 열면 보입니다.', dLinked: 'handide로 연결됨 · 모든 권한', dName: '기기 이름', 'err.last-admin': '관리 권한이 있는 기기가 하나는 남아 있어야 합니다', 'err.perm-control': '이 기기는 보기만 할 수 있습니다', 'err.perm-files': '이 기기에는 파일 권한이 없습니다', 'err.perm-term': '이 기기에는 터미널 권한이 없습니다', 'err.perm-admin': '이 기기에는 관리 권한이 없습니다', fCancel: '취소', fCancelled: '올리기를 취소했습니다', vReconnect: '연결이 끊겼습니다 · 다시 연결하는 중…', vRetry: '다시 연결', vLost: 'PC에 연결할 수 없습니다', termOpen: '열린 터미널', termStart: '새로 열기', termEnd: '이 터미널 끝내기', termCurrent: '지금', term: '터미널', termEnded: '터미널이 끝났습니다', termNew: '새 터미널', termType: '명령 또는 입력 (한글 가능)', termRun: '실행', files: '파일', filesTitle: 'PC 파일', fOpen: 'PC에서 열기', fGet: '휴대폰으로 받기', fShow: '탐색기에서 보기', fUp: '휴대폰에서 올리기', fUploaded: '올렸습니다', fUploading: '올리는 중…', fEmpty: '빈 폴더입니다', fNoAccess: '이 폴더는 열 수 없습니다', fMore: '항목이 많아 일부만 표시합니다', fPlaces: '바로가기', fDrives: '드라이브', pDesktop: '바탕 화면', pDownloads: '다운로드', pDocuments: '문서', pPictures: '사진', pHome: '사용자 폴더', dlDone: '다운로드 완료', dlOpen: '열기', dlFolder: '폴더에서 보기', dlLater: '닫기', dlWaiting: 'PC에서 여는 중…', micOn: '마이크 켜짐 · PC에서 "CABLE Output"을 마이크로 고르세요', micOff: '마이크 꺼짐', micDenied: '마이크 권한이 거부되었습니다', micGuideTitle: 'PC에 가상 마이크 드라이버가 필요합니다', micGuide: 'Windows는 프로그램이 마이크를 만들 수 없어서, 무료 가상 오디오 케이블(VB-CABLE)을 PC에 한 번 설치해야 합니다.', micStep1: 'PC에서 vb-audio.com/Cable 을 열어 VB-CABLE Driver를 받습니다.', micStep2: '압축을 풀고 VBCABLE_Setup_x64.exe를 오른쪽 클릭 → 관리자 권한으로 실행 → Install Driver.', micStep3: 'PC를 다시 시작합니다.', micStep4: '통화·녹음 프로그램에서 마이크를 "CABLE Output"(Hi-Fi Cable이면 "Hi-Fi Cable Output")으로 고릅니다.', micCopy: '주소 복사', micCopied: '주소를 복사했습니다', soundOff: '무음', soundWindow: '이 창 소리', soundAll: '전체 소리', soundFailed: '소리를 가져오지 못했습니다', back: '‹ 목록', close: '닫기', closeOne: '이 창 닫기', closeAll: '{proc} 창 {n}개 모두 닫기', closeHint: '저장하지 않은 내용이 있으면 PC에서 저장할지 묻는 창이 뜹니다.', closed: '창 {n}개에 닫기를 보냈습니다', closeFailed: '창 {n}개는 닫지 못했습니다',
+		diag: '연결 상태', diagRun: '다시 측정', diagMeasuring: '측정하는 중…', dgPath: '연결 경로', dgLan: '같은 Wi‑Fi (직접)', dgTsDirect: 'Tailscale · 직접 연결', dgTsRelay: 'Tailscale · 중계 서버 경유 ({relay})', dgTs: 'Tailscale', dgHandide: 'handide 경유', dgLocal: '이 PC', dgRtt: '응답 시간', dgDown: '받기 속도', dgUp: '보내기 속도', dgParts: 'PC 구성 요소', dgFrames: '화면', dgControl: '조작', dgSound: '소리', dgHelper: 'SYSTEM 도우미', dgHelperNo: '설치 안 됨', dgHelperDown: '응답 없음', dgRemote: '밖에서 접속', dgService: 'PC 켤 때 자동 실행', dgOn: '켜짐', dgOff: '꺼짐', dgTurnOn: '켜기', dgTurnOff: '끄기', dgStream: '화면 전송', dgStreamVal: '화질 {q} · 크기 {s}% · 초당 {fps}장 · 한 장 {kb} KB', dgVersion: '버전', dgUptime: '실행 시간', dgGood: '문제 없음', dgOffline: 'PC에 연결할 수 없습니다', dgOff1: 'PC가 켜져 있고 Windows에 로그인되어 있는지 확인하세요.', dgOff2: '집 밖이면 폰의 Tailscale이 켜져 있어야 합니다. 집에서는 PC와 같은 Wi‑Fi인지 확인하세요.', dgOff3: 'PC에서 handremote가 실행 중이어야 합니다. ‘PC 켤 때 자동 실행’을 켜 두면 재부팅 뒤에도 알아서 켜집니다.', adRelay: 'Tailscale이 직접 연결하지 못해 중계 서버를 거칩니다. 느릴 수 있습니다. 집에서는 같은 Wi‑Fi로 연결하세요.', adSlowRtt: '응답이 느립니다. 화면이 늦게 따라오고 화질이 자동으로 낮아집니다.', adSlowDown: '받기 속도가 낮아 화질과 크기가 자동으로 낮아집니다.', adPart: 'PC의 ‘{name}’ 부분이 응답하지 않습니다. 잠시 뒤 다시 측정하거나 handremote를 다시 시작하세요.', adService: 'PC를 다시 켜면 handremote가 자동으로 켜지지 않습니다.', adRemote: '밖에서는 접속할 수 없습니다: {reason}', dgHandover: '자동 실행으로 넘기는 중… 몇 초 뒤 다시 연결됩니다', devices: '기기', devicesTitle: '연결된 기기', dThis: '이 기기', dSeen: '최근 사용', pControl: '조작', pFiles: '파일', pTerm: '터미널', pAdmin: '관리', dLook: '보기는 항상 됩니다', dRename: '이름 바꾸기', dRemove: '연결 해제', dRemoveAsk: '"{name}"의 연결을 끊을까요? 다시 쓰려면 새로 연결해야 합니다.', dRemoved: '연결을 해제했습니다', dAdd: '기기 추가', dAddTitle: '새 기기에 줄 권한', dAddHint: '초대 링크는 10분 동안 한 번만 쓸 수 있습니다.', dMake: '초대 링크 만들기', dInviteHint: '새 기기의 카메라로 QR을 찍거나 링크를 보내세요. {time}까지 유효합니다.', dCopy: '링크 복사', dCopied: '링크를 복사했습니다', dRotate: 'PC 링크 바꾸기', dRotateAsk: '지금까지 나눠 준 QR 코드와 링크로는 새 기기를 더 연결할 수 없게 됩니다. 이미 연결된 기기는 그대로입니다. 바꿀까요?', dRotated: 'PC 링크를 바꿨습니다. 새 QR 코드는 PC에서 localhost:9100/connect 를 열면 보입니다.', dLinked: 'handide로 연결됨 · 모든 권한', dName: '기기 이름', 'err.last-admin': '관리 권한이 있는 기기가 하나는 남아 있어야 합니다', 'err.perm-control': '이 기기는 보기만 할 수 있습니다', 'err.perm-files': '이 기기에는 파일 권한이 없습니다', 'err.perm-term': '이 기기에는 터미널 권한이 없습니다', 'err.perm-admin': '이 기기에는 관리 권한이 없습니다', fCancel: '취소', fCancelled: '올리기를 취소했습니다', vReconnect: '연결이 끊겼습니다 · 다시 연결하는 중…', vRetry: '다시 연결', vLost: 'PC에 연결할 수 없습니다', termOpen: '열린 터미널', termStart: '새로 열기', termEnd: '이 터미널 끝내기', termCurrent: '지금', term: '터미널', termEnded: '터미널이 끝났습니다', termNew: '새 터미널', termType: '명령 또는 입력 (한글 가능)', termRun: '실행', files: '파일', filesTitle: 'PC 파일', fOpen: 'PC에서 열기', fGet: '휴대폰으로 받기', fShow: '탐색기에서 보기', fUp: '휴대폰에서 올리기', fUploaded: '올렸습니다', fUploading: '올리는 중…', fEmpty: '빈 폴더입니다', fNoAccess: '이 폴더는 열 수 없습니다', fMore: '항목이 많아 일부만 표시합니다', fPlaces: '바로가기', fDrives: '드라이브', pDesktop: '바탕 화면', pDownloads: '다운로드', pDocuments: '문서', pPictures: '사진', pHome: '사용자 폴더', dlDone: '다운로드 완료', dlOpen: '열기', dlFolder: '폴더에서 보기', dlLater: '닫기', dlWaiting: 'PC에서 여는 중…', micOn: '마이크 켜짐 · PC에서 "CABLE Output"을 마이크로 고르세요', micOff: '마이크 꺼짐', micDenied: '마이크 권한이 거부되었습니다', micGuideTitle: 'PC에 가상 마이크 드라이버가 필요합니다', micGuide: 'Windows는 프로그램이 마이크를 만들 수 없어서, 무료 가상 오디오 케이블(VB-CABLE)을 PC에 한 번 설치해야 합니다.', micStep1: 'PC에서 vb-audio.com/Cable 을 열어 VB-CABLE Driver를 받습니다.', micStep2: '압축을 풀고 VBCABLE_Setup_x64.exe를 오른쪽 클릭 → 관리자 권한으로 실행 → Install Driver.', micStep3: 'PC를 다시 시작합니다.', micStep4: '통화·녹음 프로그램에서 마이크를 "CABLE Output"(Hi-Fi Cable이면 "Hi-Fi Cable Output")으로 고릅니다.', micCopy: '주소 복사', micCopied: '주소를 복사했습니다', soundOff: '무음', soundWindow: '이 창 소리', soundAll: '전체 소리', soundFailed: '소리를 가져오지 못했습니다', back: '‹ 목록', close: '닫기', closeOne: '이 창 닫기', closeAll: '{proc} 창 {n}개 모두 닫기', closeHint: '저장하지 않은 내용이 있으면 PC에서 저장할지 묻는 창이 뜹니다.', closed: '창 {n}개에 닫기를 보냈습니다', closeFailed: '창 {n}개는 닫지 못했습니다',
 		loading: '불러오는 중…', send: '보내기', type: '입력할 내용', apps: '앱 창', widgets: '위젯', tray: '트레이', web: '웹 앱', servers: '서버·서비스', secure: '보안 화면',
 		secureRow: 'UAC 확인 창 또는 잠금 화면', secureHint: '관리자 승인이나 PIN 입력을 기다리는 중', minimized: '최소화', viewOnly: '보기만', front: '앞', hidden: '숨김',
 		fitPhone: '폰 크기', fitOrig: '원래 크기', none: '없음', offline: 'PC에 연결할 수 없습니다', gone: '창이 닫혔습니다',
@@ -20,7 +20,7 @@ const STRINGS = {
 		path: '경로', cmd: '명령줄', started: '시작', memory: '메모리', ports: '포트', trayHint: '탭: 클릭 · 길게: 오른쪽 클릭', opened: '열린 창이 없습니다', pc: 'PC',
 	},
 	en: {
-		devices: 'Devices', devicesTitle: 'Paired devices', dThis: 'this device', dSeen: 'last used', pControl: 'Control', pFiles: 'Files', pTerm: 'Terminal', pAdmin: 'Admin', dLook: 'Viewing is always allowed', dRename: 'Rename', dRemove: 'Unpair', dRemoveAsk: 'Unpair "{name}"? It has to be paired again to be used.', dRemoved: 'Unpaired', dAdd: 'Add a device', dAddTitle: 'Permissions for the new device', dAddHint: 'The invite works once, for 10 minutes.', dMake: 'Make an invite link', dInviteHint: 'Scan the QR code with the new device or send it the link. Valid until {time}.', dCopy: 'Copy link', dCopied: 'Link copied', dRotate: 'Replace the PC link', dRotateAsk: 'QR codes and links handed out so far will no longer pair new devices. Paired devices stay. Replace it?', dRotated: 'The PC link was replaced. Its new QR code is at localhost:9100/connect on the PC.', dLinked: 'Through handide · all permissions', dName: 'Device name', 'err.last-admin': 'At least one device has to keep Admin', 'err.perm-control': 'This device may only view', 'err.perm-files': 'This device has no Files permission', 'err.perm-term': 'This device has no Terminal permission', 'err.perm-admin': 'This device has no Admin permission', fCancel: 'Cancel', fCancelled: 'Upload cancelled', vReconnect: 'Connection lost · reconnecting…', vRetry: 'Reconnect', vLost: 'Cannot reach the PC', termOpen: 'Open terminals', termStart: 'Open a new one', termEnd: 'End this terminal', termCurrent: 'now', term: 'Terminal', termEnded: 'The terminal ended', termNew: 'New terminal', termType: 'Command or text', termRun: 'Run', files: 'Files', filesTitle: 'PC files', fOpen: 'Open on the PC', fGet: 'Save to phone', fShow: 'Show in Explorer', fUp: 'Upload from phone', fUploaded: 'Uploaded', fUploading: 'Uploading…', fEmpty: 'Empty folder', fNoAccess: 'This folder cannot be opened', fMore: 'Too many items: some are shown', fPlaces: 'Places', fDrives: 'Drives', pDesktop: 'Desktop', pDownloads: 'Downloads', pDocuments: 'Documents', pPictures: 'Pictures', pHome: 'Home', dlDone: 'Download finished', dlOpen: 'Open', dlFolder: 'Show in folder', dlLater: 'Close', dlWaiting: 'Opening on the PC…', micOn: 'Microphone on · pick "CABLE Output" as the microphone on the PC', micOff: 'Microphone off', micDenied: 'Microphone access was denied', micGuideTitle: 'The PC needs a virtual microphone driver', micGuide: 'Windows does not let a program add a microphone, so a free virtual audio cable (VB-CABLE) has to be installed on the PC once.', micStep1: 'On the PC, open vb-audio.com/Cable and download the VB-CABLE Driver.', micStep2: 'Unzip it, right-click VBCABLE_Setup_x64.exe → Run as administrator → Install Driver.', micStep3: 'Restart the PC.', micStep4: 'In the call or recording app, pick "CABLE Output" (with Hi-Fi Cable: "Hi-Fi Cable Output") as the microphone.', micCopy: 'Copy address', micCopied: 'Address copied', soundOff: 'Muted', soundWindow: 'This window', soundAll: 'Whole PC', soundFailed: 'Could not get the sound', back: '‹ List', close: 'Close', closeOne: 'Close this window', closeAll: 'Close all {n} {proc} windows', closeHint: 'An app with unsaved work asks on the PC whether to save it.', closed: 'Asked {n} window(s) to close', closeFailed: '{n} window(s) could not be closed',
+		diag: 'Connection', diagRun: 'Measure again', diagMeasuring: 'Measuring…', dgPath: 'Path', dgLan: 'Same Wi‑Fi (direct)', dgTsDirect: 'Tailscale · direct', dgTsRelay: 'Tailscale · through a relay ({relay})', dgTs: 'Tailscale', dgHandide: 'Through handide', dgLocal: 'This PC', dgRtt: 'Response time', dgDown: 'Download', dgUp: 'Upload', dgParts: 'Parts on the PC', dgFrames: 'Screen', dgControl: 'Control', dgSound: 'Sound', dgHelper: 'SYSTEM helper', dgHelperNo: 'not installed', dgHelperDown: 'not answering', dgRemote: 'Away from home', dgService: 'Start with the PC', dgOn: 'on', dgOff: 'off', dgTurnOn: 'Turn on', dgTurnOff: 'Turn off', dgStream: 'Screen stream', dgStreamVal: 'quality {q} · size {s}% · {fps} frames/s · {kb} KB each', dgVersion: 'Version', dgUptime: 'Running for', dgGood: 'All good', dgOffline: 'Cannot reach the PC', dgOff1: 'Check that the PC is on and signed in to Windows.', dgOff2: 'Away from home, Tailscale must be on on the phone. At home, check the phone is on the same Wi‑Fi as the PC.', dgOff3: 'handremote must be running on the PC. With "Start with the PC" on, it starts by itself after a restart.', adRelay: 'Tailscale could not connect directly and goes through a relay, which can be slow. At home, use the same Wi‑Fi.', adSlowRtt: 'Slow responses: the screen lags and its quality goes down by itself.', adSlowDown: 'Slow download: quality and size go down by themselves.', adPart: 'The "{name}" part on the PC does not answer. Measure again in a moment or restart handremote.', adService: 'handremote does not start by itself when the PC restarts.', adRemote: 'Not reachable away from home: {reason}', dgHandover: 'Handing over to the logon service… reconnecting in a few seconds', devices: 'Devices', devicesTitle: 'Paired devices', dThis: 'this device', dSeen: 'last used', pControl: 'Control', pFiles: 'Files', pTerm: 'Terminal', pAdmin: 'Admin', dLook: 'Viewing is always allowed', dRename: 'Rename', dRemove: 'Unpair', dRemoveAsk: 'Unpair "{name}"? It has to be paired again to be used.', dRemoved: 'Unpaired', dAdd: 'Add a device', dAddTitle: 'Permissions for the new device', dAddHint: 'The invite works once, for 10 minutes.', dMake: 'Make an invite link', dInviteHint: 'Scan the QR code with the new device or send it the link. Valid until {time}.', dCopy: 'Copy link', dCopied: 'Link copied', dRotate: 'Replace the PC link', dRotateAsk: 'QR codes and links handed out so far will no longer pair new devices. Paired devices stay. Replace it?', dRotated: 'The PC link was replaced. Its new QR code is at localhost:9100/connect on the PC.', dLinked: 'Through handide · all permissions', dName: 'Device name', 'err.last-admin': 'At least one device has to keep Admin', 'err.perm-control': 'This device may only view', 'err.perm-files': 'This device has no Files permission', 'err.perm-term': 'This device has no Terminal permission', 'err.perm-admin': 'This device has no Admin permission', fCancel: 'Cancel', fCancelled: 'Upload cancelled', vReconnect: 'Connection lost · reconnecting…', vRetry: 'Reconnect', vLost: 'Cannot reach the PC', termOpen: 'Open terminals', termStart: 'Open a new one', termEnd: 'End this terminal', termCurrent: 'now', term: 'Terminal', termEnded: 'The terminal ended', termNew: 'New terminal', termType: 'Command or text', termRun: 'Run', files: 'Files', filesTitle: 'PC files', fOpen: 'Open on the PC', fGet: 'Save to phone', fShow: 'Show in Explorer', fUp: 'Upload from phone', fUploaded: 'Uploaded', fUploading: 'Uploading…', fEmpty: 'Empty folder', fNoAccess: 'This folder cannot be opened', fMore: 'Too many items: some are shown', fPlaces: 'Places', fDrives: 'Drives', pDesktop: 'Desktop', pDownloads: 'Downloads', pDocuments: 'Documents', pPictures: 'Pictures', pHome: 'Home', dlDone: 'Download finished', dlOpen: 'Open', dlFolder: 'Show in folder', dlLater: 'Close', dlWaiting: 'Opening on the PC…', micOn: 'Microphone on · pick "CABLE Output" as the microphone on the PC', micOff: 'Microphone off', micDenied: 'Microphone access was denied', micGuideTitle: 'The PC needs a virtual microphone driver', micGuide: 'Windows does not let a program add a microphone, so a free virtual audio cable (VB-CABLE) has to be installed on the PC once.', micStep1: 'On the PC, open vb-audio.com/Cable and download the VB-CABLE Driver.', micStep2: 'Unzip it, right-click VBCABLE_Setup_x64.exe → Run as administrator → Install Driver.', micStep3: 'Restart the PC.', micStep4: 'In the call or recording app, pick "CABLE Output" (with Hi-Fi Cable: "Hi-Fi Cable Output") as the microphone.', micCopy: 'Copy address', micCopied: 'Address copied', soundOff: 'Muted', soundWindow: 'This window', soundAll: 'Whole PC', soundFailed: 'Could not get the sound', back: '‹ List', close: 'Close', closeOne: 'Close this window', closeAll: 'Close all {n} {proc} windows', closeHint: 'An app with unsaved work asks on the PC whether to save it.', closed: 'Asked {n} window(s) to close', closeFailed: '{n} window(s) could not be closed',
 		loading: 'Loading…', send: 'Send', type: 'Text to type', apps: 'Windows', widgets: 'Widgets', tray: 'Tray', web: 'Web apps', servers: 'Servers', secure: 'Secure screen',
 		secureRow: 'UAC prompt or lock screen', secureHint: 'Waiting for approval or a PIN', minimized: 'minimized', viewOnly: 'view only', front: 'front', hidden: 'hidden',
 		fitPhone: 'Phone size', fitOrig: 'Original', none: 'None', offline: 'Cannot reach the PC', gone: 'The window closed',
@@ -34,7 +34,7 @@ const STRINGS = {
 		path: 'Path', cmd: 'Command line', started: 'Started', memory: 'Memory', ports: 'Ports', trayHint: 'Tap: click · Hold: right-click', opened: 'Nothing opened', pc: 'PC',
 	},
 	ja: {
-		devices: 'デバイス', devicesTitle: '接続済みのデバイス', dThis: 'このデバイス', dSeen: '最終使用', pControl: '操作', pFiles: 'ファイル', pTerm: 'ターミナル', pAdmin: '管理', dLook: '表示は常に可能です', dRename: '名前を変更', dRemove: '接続を解除', dRemoveAsk: '「{name}」の接続を解除しますか？再び使うには接続し直す必要があります。', dRemoved: '接続を解除しました', dAdd: 'デバイスを追加', dAddTitle: '新しいデバイスの権限', dAddHint: '招待リンクは10分間、1回だけ使えます。', dMake: '招待リンクを作成', dInviteHint: '新しいデバイスのカメラでQRを読み取るか、リンクを送ってください。{time}まで有効です。', dCopy: 'リンクをコピー', dCopied: 'リンクをコピーしました', dRotate: 'PCのリンクを変更', dRotateAsk: 'これまでに配ったQRコードとリンクでは新しいデバイスを接続できなくなります。接続済みのデバイスはそのままです。変更しますか？', dRotated: 'PCのリンクを変更しました。新しいQRコードはPCで localhost:9100/connect を開くと表示されます。', dLinked: 'handide経由 · すべての権限', dName: 'デバイス名', 'err.last-admin': '管理権限のあるデバイスが1台は必要です', 'err.perm-control': 'このデバイスは表示のみです', 'err.perm-files': 'このデバイスにはファイル権限がありません', 'err.perm-term': 'このデバイスにはターミナル権限がありません', 'err.perm-admin': 'このデバイスには管理権限がありません', fCancel: 'キャンセル', fCancelled: 'アップロードをキャンセルしました', vReconnect: '接続が切れました · 再接続しています…', vRetry: '再接続', vLost: 'PC に接続できません', termOpen: '開いているターミナル', termStart: '新しく開く', termEnd: 'このターミナルを終了', termCurrent: '表示中', term: 'ターミナル', termEnded: 'ターミナルが終了しました', termNew: '新しいターミナル', termType: 'コマンドまたは入力', termRun: '実行', files: 'ファイル', filesTitle: 'PC のファイル', fOpen: 'PC で開く', fGet: 'スマホに保存', fShow: 'エクスプローラーで表示', fUp: 'スマホからアップロード', fUploaded: 'アップロードしました', fUploading: 'アップロード中…', fEmpty: '空のフォルダーです', fNoAccess: 'このフォルダーは開けません', fMore: '項目が多いため一部を表示しています', fPlaces: 'よく使う場所', fDrives: 'ドライブ', pDesktop: 'デスクトップ', pDownloads: 'ダウンロード', pDocuments: 'ドキュメント', pPictures: 'ピクチャ', pHome: 'ユーザー フォルダー', dlDone: 'ダウンロード完了', dlOpen: '開く', dlFolder: 'フォルダーで表示', dlLater: '閉じる', dlWaiting: 'PC で開いています…', micOn: 'マイク オン · PC で「CABLE Output」をマイクに選んでください', micOff: 'マイク オフ', micDenied: 'マイクの許可が拒否されました', micGuideTitle: 'PC に仮想マイクのドライバーが必要です', micGuide: 'Windows ではプログラムがマイクを追加できないため、無料の仮想オーディオケーブル (VB-CABLE) を PC に一度インストールします。', micStep1: 'PC で vb-audio.com/Cable を開き、VB-CABLE Driver をダウンロードします。', micStep2: '展開して VBCABLE_Setup_x64.exe を右クリック → 管理者として実行 → Install Driver。', micStep3: 'PC を再起動します。', micStep4: '通話・録音アプリでマイクを「CABLE Output」(Hi-Fi Cable なら「Hi-Fi Cable Output」)にします。', micCopy: 'アドレスをコピー', micCopied: 'アドレスをコピーしました', soundOff: 'ミュート', soundWindow: 'このウィンドウの音', soundAll: 'PC 全体の音', soundFailed: '音を取得できませんでした', back: '‹ 一覧', close: '閉じる', closeOne: 'このウィンドウを閉じる', closeAll: '{proc} のウィンドウ {n} 個をすべて閉じる', closeHint: '保存していない内容があると、PC で保存するか確認されます。', closed: '{n} 個のウィンドウに閉じる指示を送りました', closeFailed: '{n} 個のウィンドウは閉じられませんでした',
+		diag: '接続状態', diagRun: '再測定', diagMeasuring: '測定中…', dgPath: '接続経路', dgLan: '同じWi‑Fi（直接）', dgTsDirect: 'Tailscale · 直接接続', dgTsRelay: 'Tailscale · 中継サーバー経由（{relay}）', dgTs: 'Tailscale', dgHandide: 'handide経由', dgLocal: 'このPC', dgRtt: '応答時間', dgDown: '受信速度', dgUp: '送信速度', dgParts: 'PCの構成要素', dgFrames: '画面', dgControl: '操作', dgSound: '音', dgHelper: 'SYSTEMヘルパー', dgHelperNo: '未インストール', dgHelperDown: '応答なし', dgRemote: '外出先からの接続', dgService: 'PC起動時に自動実行', dgOn: 'オン', dgOff: 'オフ', dgTurnOn: 'オンにする', dgTurnOff: 'オフにする', dgStream: '画面転送', dgStreamVal: '画質 {q} · サイズ {s}% · 毎秒 {fps}枚 · 1枚 {kb} KB', dgVersion: 'バージョン', dgUptime: '実行時間', dgGood: '問題なし', dgOffline: 'PCに接続できません', dgOff1: 'PCの電源が入っていて、Windowsにサインインしているか確認してください。', dgOff2: '外出先ではスマホのTailscaleをオンにしてください。自宅ではPCと同じWi‑Fiか確認してください。', dgOff3: 'PCでhandremoteが実行中である必要があります。「PC起動時に自動実行」をオンにすると再起動後も自動で起動します。', adRelay: 'Tailscaleが直接接続できず中継サーバーを経由しています。遅くなることがあります。自宅では同じWi‑Fiで接続してください。', adSlowRtt: '応答が遅いです。画面の追従が遅れ、画質が自動で下がります。', adSlowDown: '受信速度が低いため、画質とサイズが自動で下がります。', adPart: 'PCの「{name}」が応答しません。少し待って再測定するか、handremoteを再起動してください。', adService: 'PCを再起動してもhandremoteは自動で起動しません。', adRemote: '外出先からは接続できません: {reason}', dgHandover: '自動実行に切り替え中… 数秒後に再接続します', devices: 'デバイス', devicesTitle: '接続済みのデバイス', dThis: 'このデバイス', dSeen: '最終使用', pControl: '操作', pFiles: 'ファイル', pTerm: 'ターミナル', pAdmin: '管理', dLook: '表示は常に可能です', dRename: '名前を変更', dRemove: '接続を解除', dRemoveAsk: '「{name}」の接続を解除しますか？再び使うには接続し直す必要があります。', dRemoved: '接続を解除しました', dAdd: 'デバイスを追加', dAddTitle: '新しいデバイスの権限', dAddHint: '招待リンクは10分間、1回だけ使えます。', dMake: '招待リンクを作成', dInviteHint: '新しいデバイスのカメラでQRを読み取るか、リンクを送ってください。{time}まで有効です。', dCopy: 'リンクをコピー', dCopied: 'リンクをコピーしました', dRotate: 'PCのリンクを変更', dRotateAsk: 'これまでに配ったQRコードとリンクでは新しいデバイスを接続できなくなります。接続済みのデバイスはそのままです。変更しますか？', dRotated: 'PCのリンクを変更しました。新しいQRコードはPCで localhost:9100/connect を開くと表示されます。', dLinked: 'handide経由 · すべての権限', dName: 'デバイス名', 'err.last-admin': '管理権限のあるデバイスが1台は必要です', 'err.perm-control': 'このデバイスは表示のみです', 'err.perm-files': 'このデバイスにはファイル権限がありません', 'err.perm-term': 'このデバイスにはターミナル権限がありません', 'err.perm-admin': 'このデバイスには管理権限がありません', fCancel: 'キャンセル', fCancelled: 'アップロードをキャンセルしました', vReconnect: '接続が切れました · 再接続しています…', vRetry: '再接続', vLost: 'PC に接続できません', termOpen: '開いているターミナル', termStart: '新しく開く', termEnd: 'このターミナルを終了', termCurrent: '表示中', term: 'ターミナル', termEnded: 'ターミナルが終了しました', termNew: '新しいターミナル', termType: 'コマンドまたは入力', termRun: '実行', files: 'ファイル', filesTitle: 'PC のファイル', fOpen: 'PC で開く', fGet: 'スマホに保存', fShow: 'エクスプローラーで表示', fUp: 'スマホからアップロード', fUploaded: 'アップロードしました', fUploading: 'アップロード中…', fEmpty: '空のフォルダーです', fNoAccess: 'このフォルダーは開けません', fMore: '項目が多いため一部を表示しています', fPlaces: 'よく使う場所', fDrives: 'ドライブ', pDesktop: 'デスクトップ', pDownloads: 'ダウンロード', pDocuments: 'ドキュメント', pPictures: 'ピクチャ', pHome: 'ユーザー フォルダー', dlDone: 'ダウンロード完了', dlOpen: '開く', dlFolder: 'フォルダーで表示', dlLater: '閉じる', dlWaiting: 'PC で開いています…', micOn: 'マイク オン · PC で「CABLE Output」をマイクに選んでください', micOff: 'マイク オフ', micDenied: 'マイクの許可が拒否されました', micGuideTitle: 'PC に仮想マイクのドライバーが必要です', micGuide: 'Windows ではプログラムがマイクを追加できないため、無料の仮想オーディオケーブル (VB-CABLE) を PC に一度インストールします。', micStep1: 'PC で vb-audio.com/Cable を開き、VB-CABLE Driver をダウンロードします。', micStep2: '展開して VBCABLE_Setup_x64.exe を右クリック → 管理者として実行 → Install Driver。', micStep3: 'PC を再起動します。', micStep4: '通話・録音アプリでマイクを「CABLE Output」(Hi-Fi Cable なら「Hi-Fi Cable Output」)にします。', micCopy: 'アドレスをコピー', micCopied: 'アドレスをコピーしました', soundOff: 'ミュート', soundWindow: 'このウィンドウの音', soundAll: 'PC 全体の音', soundFailed: '音を取得できませんでした', back: '‹ 一覧', close: '閉じる', closeOne: 'このウィンドウを閉じる', closeAll: '{proc} のウィンドウ {n} 個をすべて閉じる', closeHint: '保存していない内容があると、PC で保存するか確認されます。', closed: '{n} 個のウィンドウに閉じる指示を送りました', closeFailed: '{n} 個のウィンドウは閉じられませんでした',
 		loading: '読み込み中…', send: '送信', type: '入力する内容', apps: 'ウィンドウ', widgets: 'ウィジェット', tray: 'トレイ', web: 'Web アプリ', servers: 'サーバー', secure: 'セキュア画面',
 		secureRow: 'UAC 確認またはロック画面', secureHint: '承認または PIN を待っています', minimized: '最小化', viewOnly: '表示のみ', front: '前面', hidden: '非表示',
 		fitPhone: 'スマホサイズ', fitOrig: '元のサイズ', none: 'なし', offline: 'PC に接続できません', gone: 'ウィンドウが閉じました',
@@ -48,7 +48,7 @@ const STRINGS = {
 		path: 'パス', cmd: 'コマンドライン', started: '開始', memory: 'メモリ', ports: 'ポート', trayHint: 'タップ: クリック · 長押し: 右クリック', opened: '開いたウィンドウはありません', pc: 'PC',
 	},
 	zh: {
-		devices: '设备', devicesTitle: '已连接的设备', dThis: '本设备', dSeen: '最近使用', pControl: '操作', pFiles: '文件', pTerm: '终端', pAdmin: '管理', dLook: '始终可以查看', dRename: '重命名', dRemove: '断开连接', dRemoveAsk: '断开“{name}”的连接？再次使用需要重新连接。', dRemoved: '已断开连接', dAdd: '添加设备', dAddTitle: '新设备的权限', dAddHint: '邀请链接10分钟内只能使用一次。', dMake: '创建邀请链接', dInviteHint: '用新设备的相机扫描二维码或发送链接。有效期至 {time}。', dCopy: '复制链接', dCopied: '已复制链接', dRotate: '更换PC链接', dRotateAsk: '之前分发的二维码和链接将无法再连接新设备。已连接的设备不受影响。要更换吗？', dRotated: '已更换PC链接。在PC上打开 localhost:9100/connect 可看到新的二维码。', dLinked: '通过 handide · 全部权限', dName: '设备名称', 'err.last-admin': '至少要有一台设备保留管理权限', 'err.perm-control': '本设备只能查看', 'err.perm-files': '本设备没有文件权限', 'err.perm-term': '本设备没有终端权限', 'err.perm-admin': '本设备没有管理权限', fCancel: '取消', fCancelled: '已取消上传', vReconnect: '连接已断开 · 正在重新连接…', vRetry: '重新连接', vLost: '无法连接到电脑', termOpen: '已打开的终端', termStart: '新建', termEnd: '结束此终端', termCurrent: '当前', term: '终端', termEnded: '终端已结束', termNew: '新终端', termType: '命令或输入', termRun: '运行', files: '文件', filesTitle: '电脑文件', fOpen: '在电脑上打开', fGet: '保存到手机', fShow: '在资源管理器中显示', fUp: '从手机上传', fUploaded: '已上传', fUploading: '正在上传…', fEmpty: '空文件夹', fNoAccess: '无法打开此文件夹', fMore: '项目太多，仅显示部分', fPlaces: '常用位置', fDrives: '驱动器', pDesktop: '桌面', pDownloads: '下载', pDocuments: '文档', pPictures: '图片', pHome: '用户文件夹', dlDone: '下载完成', dlOpen: '打开', dlFolder: '在文件夹中显示', dlLater: '关闭', dlWaiting: '正在电脑上打开…', micOn: '麦克风已开 · 在电脑上选择 "CABLE Output" 作为麦克风', micOff: '麦克风已关', micDenied: '麦克风权限被拒绝', micGuideTitle: '电脑需要虚拟麦克风驱动', micGuide: 'Windows 不允许程序添加麦克风，需要在电脑上安装一次免费的虚拟音频线 (VB-CABLE)。', micStep1: '在电脑上打开 vb-audio.com/Cable，下载 VB-CABLE Driver。', micStep2: '解压后右键 VBCABLE_Setup_x64.exe → 以管理员身份运行 → Install Driver。', micStep3: '重启电脑。', micStep4: '在通话或录音软件中把麦克风选为 "CABLE Output"（Hi-Fi Cable 则为 "Hi-Fi Cable Output"）。', micCopy: '复制地址', micCopied: '地址已复制', soundOff: '静音', soundWindow: '此窗口声音', soundAll: '全部声音', soundFailed: '无法获取声音', back: '‹ 列表', close: '关闭', closeOne: '关闭此窗口', closeAll: '关闭全部 {n} 个 {proc} 窗口', closeHint: '有未保存内容的应用会在电脑上询问是否保存。', closed: '已让 {n} 个窗口关闭', closeFailed: '{n} 个窗口未能关闭',
+		diag: '连接状态', diagRun: '重新测量', diagMeasuring: '正在测量…', dgPath: '连接路径', dgLan: '同一 Wi‑Fi（直连）', dgTsDirect: 'Tailscale · 直连', dgTsRelay: 'Tailscale · 经中继服务器（{relay}）', dgTs: 'Tailscale', dgHandide: '经 handide', dgLocal: '本机', dgRtt: '响应时间', dgDown: '下载速度', dgUp: '上传速度', dgParts: 'PC 组件', dgFrames: '画面', dgControl: '操作', dgSound: '声音', dgHelper: 'SYSTEM 助手', dgHelperNo: '未安装', dgHelperDown: '无响应', dgRemote: '外出时访问', dgService: '开机自动运行', dgOn: '开', dgOff: '关', dgTurnOn: '打开', dgTurnOff: '关闭', dgStream: '画面传输', dgStreamVal: '画质 {q} · 尺寸 {s}% · 每秒 {fps} 帧 · 每帧 {kb} KB', dgVersion: '版本', dgUptime: '运行时间', dgGood: '一切正常', dgOffline: '无法连接到 PC', dgOff1: '请确认 PC 已开机并已登录 Windows。', dgOff2: '外出时手机需打开 Tailscale；在家请确认手机与 PC 在同一 Wi‑Fi。', dgOff3: 'PC 上需要运行 handremote。打开“开机自动运行”后，重启后也会自动启动。', adRelay: 'Tailscale 无法直连，正经中继服务器转发，可能较慢。在家请使用同一 Wi‑Fi。', adSlowRtt: '响应较慢：画面跟随变慢，画质会自动降低。', adSlowDown: '下载速度较低：画质和尺寸会自动降低。', adPart: 'PC 的“{name}”部分无响应。请稍后重新测量或重启 handremote。', adService: 'PC 重启后 handremote 不会自动启动。', adRemote: '外出时无法访问：{reason}', dgHandover: '正在切换到开机自动运行… 几秒后重新连接', devices: '设备', devicesTitle: '已连接的设备', dThis: '本设备', dSeen: '最近使用', pControl: '操作', pFiles: '文件', pTerm: '终端', pAdmin: '管理', dLook: '始终可以查看', dRename: '重命名', dRemove: '断开连接', dRemoveAsk: '断开“{name}”的连接？再次使用需要重新连接。', dRemoved: '已断开连接', dAdd: '添加设备', dAddTitle: '新设备的权限', dAddHint: '邀请链接10分钟内只能使用一次。', dMake: '创建邀请链接', dInviteHint: '用新设备的相机扫描二维码或发送链接。有效期至 {time}。', dCopy: '复制链接', dCopied: '已复制链接', dRotate: '更换PC链接', dRotateAsk: '之前分发的二维码和链接将无法再连接新设备。已连接的设备不受影响。要更换吗？', dRotated: '已更换PC链接。在PC上打开 localhost:9100/connect 可看到新的二维码。', dLinked: '通过 handide · 全部权限', dName: '设备名称', 'err.last-admin': '至少要有一台设备保留管理权限', 'err.perm-control': '本设备只能查看', 'err.perm-files': '本设备没有文件权限', 'err.perm-term': '本设备没有终端权限', 'err.perm-admin': '本设备没有管理权限', fCancel: '取消', fCancelled: '已取消上传', vReconnect: '连接已断开 · 正在重新连接…', vRetry: '重新连接', vLost: '无法连接到电脑', termOpen: '已打开的终端', termStart: '新建', termEnd: '结束此终端', termCurrent: '当前', term: '终端', termEnded: '终端已结束', termNew: '新终端', termType: '命令或输入', termRun: '运行', files: '文件', filesTitle: '电脑文件', fOpen: '在电脑上打开', fGet: '保存到手机', fShow: '在资源管理器中显示', fUp: '从手机上传', fUploaded: '已上传', fUploading: '正在上传…', fEmpty: '空文件夹', fNoAccess: '无法打开此文件夹', fMore: '项目太多，仅显示部分', fPlaces: '常用位置', fDrives: '驱动器', pDesktop: '桌面', pDownloads: '下载', pDocuments: '文档', pPictures: '图片', pHome: '用户文件夹', dlDone: '下载完成', dlOpen: '打开', dlFolder: '在文件夹中显示', dlLater: '关闭', dlWaiting: '正在电脑上打开…', micOn: '麦克风已开 · 在电脑上选择 "CABLE Output" 作为麦克风', micOff: '麦克风已关', micDenied: '麦克风权限被拒绝', micGuideTitle: '电脑需要虚拟麦克风驱动', micGuide: 'Windows 不允许程序添加麦克风，需要在电脑上安装一次免费的虚拟音频线 (VB-CABLE)。', micStep1: '在电脑上打开 vb-audio.com/Cable，下载 VB-CABLE Driver。', micStep2: '解压后右键 VBCABLE_Setup_x64.exe → 以管理员身份运行 → Install Driver。', micStep3: '重启电脑。', micStep4: '在通话或录音软件中把麦克风选为 "CABLE Output"（Hi-Fi Cable 则为 "Hi-Fi Cable Output"）。', micCopy: '复制地址', micCopied: '地址已复制', soundOff: '静音', soundWindow: '此窗口声音', soundAll: '全部声音', soundFailed: '无法获取声音', back: '‹ 列表', close: '关闭', closeOne: '关闭此窗口', closeAll: '关闭全部 {n} 个 {proc} 窗口', closeHint: '有未保存内容的应用会在电脑上询问是否保存。', closed: '已让 {n} 个窗口关闭', closeFailed: '{n} 个窗口未能关闭',
 		loading: '加载中…', send: '发送', type: '要输入的内容', apps: '窗口', widgets: '小组件', tray: '托盘', web: '网页应用', servers: '服务器', secure: '安全屏幕',
 		secureRow: 'UAC 提示或锁屏', secureHint: '正在等待批准或 PIN', minimized: '已最小化', viewOnly: '仅查看', front: '前台', hidden: '隐藏',
 		fitPhone: '手机尺寸', fitOrig: '原始尺寸', none: '无', offline: '无法连接到电脑', gone: '窗口已关闭',
@@ -1447,5 +1447,148 @@ async function rotateLink() {
 
 $('open-devices').addEventListener('click', openDevices);
 $('d-close').addEventListener('click', () => closeDevices());
+
+// ---------------------------------------------------------------- connection diagnosis
+// Tapping the PC's name: how this phone reaches the PC (same Wi-Fi, Tailscale direct or
+// relayed), the response time and speeds measured now, whether each part on the PC
+// answers, and whether handremote starts with the PC (an admin phone can turn that on).
+function openDiag() {
+	$('diag').hidden = false;
+	if (!history.state?.diag) history.pushState({ diag: true }, '');
+	runDiag();
+}
+function closeDiag(fromHistory = false) {
+	$('diag').hidden = true;
+	if (!fromHistory && history.state?.diag) history.back();
+}
+window.addEventListener('popstate', () => !$('diag').hidden && closeDiag(true));
+
+const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+const fill = (s, vals) => s.replace(/\{(\w+)\}/g, (_, k) => String(vals[k] ?? ''));
+const dur = (ms) => {
+	const m = Math.floor(ms / 60000);
+	return m >= 1440 ? `${Math.floor(m / 1440)}d ${Math.floor((m % 1440) / 60)}h` : m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+};
+
+async function measure() {
+	const rtts = [];
+	for (let i = 0; i < 5; i++) {
+		const t0 = performance.now();
+		await fetch('api/ping', { cache: 'no-store' });
+		rtts.push(performance.now() - t0);
+	}
+	let t0 = performance.now();
+	const down = (await (await fetch('api/diag/speed?kb=1024', { cache: 'no-store' })).arrayBuffer()).byteLength;
+	const downMbps = (down * 8) / ((performance.now() - t0) * 1000);
+	t0 = performance.now();
+	const up = await fetch('api/diag/speed', { method: 'POST', body: new Uint8Array(512 << 10) }).then((r) => r.json());
+	const upMbps = (up.bytes * 8) / ((performance.now() - t0) * 1000);
+	return { rtt: Math.round(median(rtts)), down: downMbps, up: upMbps };
+}
+
+let diagBusy = false;
+async function runDiag() {
+	if (diagBusy) return;
+	diagBusy = true;
+	const list = $('diag-list');
+	list.replaceChildren(h('p', { class: 'empty' }, t('diagMeasuring')));
+	try {
+		let d;
+		let m;
+		try {
+			d = await api('api/diag');
+			m = await measure();
+		} catch {
+			return list.replaceChildren(
+				h('div', { class: 'advice bad' }, h('b', {}, t('dgOffline'))),
+				h('ol', { class: 'sheet-steps' }, h('li', {}, t('dgOff1')), h('li', {}, t('dgOff2')), h('li', {}, t('dgOff3'))),
+				h('div', { class: 'device-foot' }, h('button', { type: 'button', class: 'chip', onclick: runDiag }, t('diagRun'))),
+			);
+		}
+		renderDiag(d, m);
+	} finally {
+		diagBusy = false;
+	}
+}
+
+function renderDiag(d, m) {
+	const advice = [];
+	const p = d.path || {};
+	let path = t('dgLocal');
+	let pathCls = 'ok';
+	if (p.kind === 'lan') path = t('dgLan');
+	else if (p.kind === 'handide') path = t('dgHandide');
+	else if (p.kind === 'tailscale') {
+		if (p.peer && !p.peer.direct) {
+			path = fill(t('dgTsRelay'), { relay: p.peer.relay || 'DERP' });
+			pathCls = 'warn';
+			advice.push(['warn', t('adRelay')]);
+		} else path = p.peer ? t('dgTsDirect') : t('dgTs');
+	}
+	const rttCls = m.rtt > 250 ? 'bad' : m.rtt > 120 ? 'warn' : 'ok';
+	if (rttCls !== 'ok') advice.push([rttCls, t('adSlowRtt')]);
+	const downCls = m.down < 2 ? 'bad' : m.down < 6 ? 'warn' : 'ok';
+	if (downCls !== 'ok') advice.push([downCls, t('adSlowDown')]);
+	const PART = { frames: 'dgFrames', control: 'dgControl', sound: 'dgSound' };
+	for (const a of d.agents) if (!a.ok) advice.push(['bad', fill(t('adPart'), { name: t(PART[a.name]) })]);
+	if (d.service?.supported && !d.service.installed) advice.push(['warn', t('adService')]);
+	if (d.remote?.reason && p.kind !== 'handide') advice.push(['info', fill(t('adRemote'), { reason: d.remote.reason })]);
+
+	const mbps = (x) => `${x >= 10 ? Math.round(x) : x.toFixed(1)} Mbps`;
+	const line = (label, value, cls = '') => h('div', { class: 'diag-row' }, h('span', {}, label), h('b', { class: cls }, value));
+	const helper = d.helper || {};
+	const helperText = !helper.installed ? t('dgHelperNo') : helper.connected ? t('dgOn') : helper.allowed === false ? t('dgOff') : t('dgHelperDown');
+	const service = d.service || {};
+	const serviceBtn =
+		service.supported && me.perms.admin
+			? h('button', { type: 'button', class: 'chip', id: 'dg-service', onclick: () => setService(!service.installed) }, service.installed ? t('dgTurnOff') : t('dgTurnOn'))
+			: null;
+	const streams = d.streams.map((s) => line(t('dgStream'), fill(t('dgStreamVal'), { q: s.q, s: Math.round(s.scale * 100), fps: s.fps, kb: s.kb }), s.inflight >= 2 ? 'warn' : ''));
+
+	$('diag-list').replaceChildren(
+		...(advice.length ? advice : [['ok', t('dgGood')]]).map(([cls, text]) => h('div', { class: `advice ${cls}` }, text)),
+		h(
+			'section',
+			{ class: 'diag-box' },
+			line(t('dgPath'), path, pathCls),
+			line(t('dgRtt'), `${m.rtt} ms`, rttCls),
+			line(t('dgDown'), mbps(m.down), downCls),
+			line(t('dgUp'), mbps(m.up)),
+			...streams,
+		),
+		h(
+			'section',
+			{ class: 'diag-box' },
+			h('h2', {}, t('dgParts')),
+			...d.agents.map((a) => line(t(PART[a.name]), a.ok ? `${a.ms} ms` : a.error, a.ok ? 'ok' : 'bad')),
+			line(t('dgHelper'), helperText),
+		),
+		h(
+			'section',
+			{ class: 'diag-box' },
+			line(t('dgRemote'), d.remote?.url ? d.remote.url.replace(/^https:\/\//, '') : d.remote?.reason || '', d.remote?.url ? 'ok' : ''),
+			service.supported ? h('div', { class: 'diag-row' }, h('span', {}, t('dgService')), h('b', { class: service.installed ? 'ok' : 'warn' }, service.installed ? t('dgOn') : t('dgOff')), serviceBtn) : null,
+			line(t('dgVersion'), `${d.version} · ${d.host}`),
+			line(t('dgUptime'), dur(d.uptime)),
+		),
+		h('div', { class: 'device-foot' }, h('button', { type: 'button', class: 'chip', id: 'dg-run', onclick: runDiag }, t('diagRun'))),
+	);
+}
+
+async function setService(on) {
+	try {
+		const r = await api('api/service', { on });
+		if (r.handover) {
+			toast(t('dgHandover'));
+			return setTimeout(runDiag, 9000);
+		}
+	} catch (err) {
+		toast(errText(err), true);
+	}
+	runDiag();
+}
+
+$('open-diag').addEventListener('click', openDiag);
+$('dg-close').addEventListener('click', () => closeDiag());
 
 loadMe().then(refresh).then(schedule);

@@ -17,7 +17,8 @@ import QRCode from 'qrcode';
 import { helperClient, startAgents } from './agent.mjs';
 import { createPortForwarder } from './ports.mjs';
 import { serverStatus } from './system.mjs';
-import { startTailscale } from './tailscale.mjs';
+import { startTailscale, tailscalePeer } from './tailscale.mjs';
+import { installService, serviceState, startLoopSoon, uninstallService, underService } from './service.mjs';
 import { ensureCert, lanAddresses } from './tls.mjs';
 import { acceptWebSocket } from './ws.mjs';
 import { watchDownloads } from './downloads.mjs';
@@ -102,6 +103,9 @@ export async function startServer(opts) {
 	const config = await loadConfig(dataDir);
 	let token = await loadToken(dataDir, opts.newToken);
 	const devices = createDevices({ dataDir, log });
+	const startedAt = Date.now();
+	let remoteInfo = { reason: opts.local ? 'this PC only (--local)' : opts.remote === false ? 'off (--no-remote)' : 'starting' };
+	const streams = new Map(); // ws → what each open window view sends now, for the diagnosis
 	const linkSecret = crypto.randomBytes(24).toString('base64url');
 	const agents = startAgents({ dataDir, log });
 	const helper = helperClient({ pipe: HELPER_PIPE, secret: readHelperSecret, log });
@@ -257,6 +261,8 @@ export async function startServer(opts) {
 			}
 		};
 		const fail = (err) => ws.sendText({ t: 'error', code: err.code || null, msg: err.message });
+		const stat = { hwnd, q, scale, inflight: 0, sent: [] };
+		streams.set(ws, stat);
 
 		// Sound for this viewer: off, this window's program, or the whole PC. One capture at a
 		// time on the PC: the viewer that set it last owns it. Sent as binary messages tagged
@@ -310,6 +316,9 @@ export async function startServer(opts) {
 					ws.sendBinary(Buffer.from(f.jpeg, 'base64'));
 					lastSent = Date.now();
 					adapt();
+					stat.sent.push(lastSent);
+					if (stat.sent.length > 30) stat.sent.shift();
+					Object.assign(stat, { q, scale, inflight: inflight(), bytes: f.jpeg.length * 0.75 });
 				} else if (Date.now() - lastSent > 5000) {
 					// Nothing changed for a while: still a sign of life for the phone's watchdog.
 					ws.sendText({ t: 'alive' });
@@ -380,6 +389,7 @@ export async function startServer(opts) {
 		});
 
 		ws.on('close', () => {
+			streams.delete(ws);
 			stopped = true;
 			clearInterval(soundTimer);
 			if (soundOwner === ws) {
@@ -409,6 +419,10 @@ export async function startServer(opts) {
 				res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'public, max-age=86400' });
 				return res.end(await readFile(file));
 			}
+			if (p === '/api/ping') return sendJson(res, 200, { ok: true, t: Date.now() });
+			if (p === '/api/diag') return sendJson(res, 200, await diagnose(req, ctx));
+			if (p === '/api/diag/speed') return await speedTest(req, res, url);
+			if (p === '/api/service' && req.method === 'POST') return await serviceApi(req, res, ctx);
 			if (p === '/api/me') return sendJson(res, 200, { ok: true, linked: !!ctx.linked, device: ctx.device ? { id: ctx.device.id, name: ctx.device.name } : null, perms: Object.fromEntries(PERMS.map((k) => [k, can(ctx, k)])) });
 			if (p.startsWith('/api/devices')) return await devicesApi(req, res, p, ctx);
 			// What each permission covers; looking (the list, the windows, the sound) is everyone's.
@@ -470,6 +484,89 @@ export async function startServer(opts) {
 		} catch (err) {
 			return sendJson(res, 500, { ok: false, error: err.message, code: err.code || null });
 		}
+	}
+
+	// ------------------------------------------------------------ connection diagnosis
+	// What the phone's "connection" screen shows: the path it came in on (same Wi-Fi,
+	// Tailscale direct or relayed, handide), whether each part on the PC answers, the
+	// streams being sent, the away-from-home link and whether handremote starts at logon.
+	function pathOf(req, ctx) {
+		if (ctx.linked) return { kind: 'handide' };
+		const raw = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+		const fwd = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+		const loop = isLoopback(req);
+		const ip = loop && fwd ? fwd : raw;
+		if (loop && !fwd) return { kind: 'local', ip };
+		if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(ip) || /^fd7a:115c:a1e0:/i.test(ip)) return { kind: 'tailscale', ip, served: loop };
+		return { kind: 'lan', ip };
+	}
+
+	async function diagnose(req, ctx) {
+		const ping = async (name, agent) => {
+			const t0 = Date.now();
+			try {
+				await agent.request('hello', {}, { timeout: 4000 });
+				return { name, ok: true, ms: Date.now() - t0 };
+			} catch (err) {
+				return { name, ok: false, error: err.message };
+			}
+		};
+		const path = pathOf(req, ctx);
+		if (path.kind === 'tailscale') path.peer = await tailscalePeer(path.ip).catch(() => null);
+		const now = Date.now();
+		return {
+			ok: true,
+			version: VERSION,
+			host: os.hostname(),
+			uptime: now - startedAt,
+			path,
+			tls: !!tls,
+			agents: await Promise.all([ping('frames', agents.frames), ping('control', agents.control), ping('sound', agents.sound)]),
+			helper: await helperState(ctx),
+			remote: remoteInfo,
+			service: serviceState(),
+			devices: devices.list().length,
+			streams: [...streams.values()].map((s) => ({
+				hwnd: s.hwnd,
+				q: s.q,
+				scale: s.scale,
+				inflight: s.inflight,
+				fps: +(s.sent.filter((t) => now - t < 5000).length / 5).toFixed(1),
+				kb: Math.round((s.bytes || 0) / 1024),
+			})),
+		};
+	}
+
+	/** GET: ?kb= random bytes to time the way down. POST: the body is read and timed. */
+	async function speedTest(req, res, url) {
+		if (req.method === 'POST') {
+			const t0 = Date.now();
+			let bytes = 0;
+			for await (const c of req) {
+				bytes += c.length;
+				if (bytes > 8 << 20) break;
+			}
+			return sendJson(res, 200, { ok: true, bytes, ms: Date.now() - t0 });
+		}
+		const kb = Math.max(16, Math.min(4096, Number(url.searchParams.get('kb')) || 512));
+		res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': kb * 1024, 'cache-control': 'no-store' });
+		res.end(crypto.randomBytes(kb * 1024));
+	}
+
+	/** Start at logon on/off, from an admin phone. */
+	async function serviceApi(req, res, ctx) {
+		if (!can(ctx, 'admin')) return sendJson(res, 403, { ok: false, error: 'not allowed on this device (admin)', code: 'perm-admin' });
+		const body = await readBody(req);
+		if (body.on) {
+			await installService({ args: process.argv.slice(2), dataDir, log, start: false });
+			// Run by hand now: hand over to the loop (this one exits, the loop's starts).
+			const handover = !underService() && startLoopSoon(3);
+			sendJson(res, 200, { ok: true, service: serviceState(), handover });
+			if (handover) setTimeout(() => shutdown(), 500);
+			return;
+		}
+		await uninstallService({ log, stop: false });
+		return sendJson(res, 200, { ok: true, service: serviceState() });
 	}
 
 	// ------------------------------------------------------------ devices and permissions
@@ -642,6 +739,7 @@ export async function startServer(opts) {
 	log(`ready on port ${opts.port}${opts.local ? ' (this PC only)' : ''}; handide link on 127.0.0.1:${linkPort}`);
 	if (!opts.local && opts.remote !== false) {
 		const r = await startTailscale({ port: opts.port, httpsPort: opts.tsPort || 9443, tls, log });
+		remoteInfo = r.url ? { url: r.url } : { reason: r.reason };
 		if (r.url) {
 			stopRemote = r.stop;
 			// The ts.net name supersedes the raw tailnet address.
