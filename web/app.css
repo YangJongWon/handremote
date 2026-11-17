@@ -234,3 +234,20 @@ main { padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); max-width: 72
 #term .keys button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 #term .chip.shell { font-weight: 600; }
 #sheet .rows { margin-top: 6px; }
+
+/* A dropped window view: its state over the last picture. */
+.v-status {
+	position: absolute; left: 12px; right: 12px; top: 12px; margin: auto; max-width: 420px;
+	display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+	padding: 10px 14px; border-radius: 12px; font-size: 14px; text-align: center;
+	background: rgba(20, 22, 27, 0.92); border: 1px solid #343a46; color: #f3f4f6;
+}
+.v-status[hidden] { display: none; }
+
+/* An upload in progress at the bottom of the files screen. */
+.up-box { padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--card); }
+.up-row { display: flex; align-items: center; gap: 8px; }
+.up-name { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-row small { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.up-bar { height: 4px; margin-top: 8px; border-radius: 2px; background: var(--chip); overflow: hidden; }
+.up-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.15s; }

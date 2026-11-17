@@ -225,6 +225,34 @@ export async function startServer(opts) {
 		let entry = null;
 		const fit = query.get('fit') === '1' && hwnd !== 0;
 		const size = { w: Math.max(200, Math.min(2000, Number(query.get('w')) || 390)), h: Math.max(200, Math.min(3000, Number(query.get('h')) || 760)) };
+		// The phone's width in device pixels: nothing wider is sent.
+		const maxw = Math.round(size.w * Math.max(1, Math.min(4, Number(query.get('dpr')) || 2)));
+		// Quality and size follow the network. The phone acknowledges each frame it shows
+		// (?ack=1): frames still on their way lower quality, then size, and stop new captures
+		// until the phone catches up (no seconds-old picture on a slow link); a run of frames
+		// that arrive right away raises them again. The socket's own backlog is a fallback.
+		const acks = query.get('ack') === '1';
+		let q = quality;
+		let scale = 1;
+		let smooth = 0;
+		let lastSent = Date.now();
+		let sentN = 0;
+		let ackN = 0;
+		let lowered = 0;
+		const inflight = () => (acks ? sentN - ackN : ws.backlog > 384 << 10 ? 3 : 0);
+		const adapt = () => {
+			const n = inflight();
+			if (n >= 2 && Date.now() - lowered > 800) {
+				lowered = Date.now();
+				smooth = 0;
+				if (q > 40) q = Math.max(40, q - 15);
+				else scale = Math.max(0.4, +(scale - 0.2).toFixed(2));
+			} else if (n === 0 && ++smooth >= 12) {
+				smooth = 0;
+				if (scale < 1) scale = Math.min(1, +(scale + 0.1).toFixed(2));
+				else if (q < quality) q = Math.min(quality, q + 5);
+			}
+		};
 		const fail = (err) => ws.sendText({ t: 'error', code: err.code || null, msg: err.message });
 
 		// Sound for this viewer: off, this window's program, or the whole PC. One capture at a
@@ -264,16 +292,25 @@ export async function startServer(opts) {
 
 		async function tick() {
 			if (stopped) return;
-			if (ws.backlog > 1 << 20) return setTimeout(tick, 80);
+			if (ws.backlog > 1 << 20 || inflight() >= 3) {
+				adapt();
+				return setTimeout(tick, 60);
+			}
 			try {
-				const f = await frames.request('frame', { hwnd, q: quality, crc }, { timeout: 10000 });
+				const f = await frames.request('frame', { hwnd, q, crc, scale, maxw }, { timeout: 10000 });
 				if (stopped) return;
 				if (f.popup && f.popup !== popupSent) ws.sendText({ t: 'popup', hwnd: f.popup, title: f.popupTitle || '' });
 				popupSent = f.popup || 0;
 				if (!f.same) {
 					crc = f.crc;
-					ws.sendText({ t: 'frame', w: f.w, h: f.h, desktop: f.desktop });
+					ws.sendText({ t: 'frame', n: ++sentN, w: f.w, h: f.h, desktop: f.desktop, q, scale: f.sw ? +(f.sw / f.w).toFixed(2) : 1 });
 					ws.sendBinary(Buffer.from(f.jpeg, 'base64'));
+					lastSent = Date.now();
+					adapt();
+				} else if (Date.now() - lastSent > 5000) {
+					// Nothing changed for a while: still a sign of life for the phone's watchdog.
+					ws.sendText({ t: 'alive' });
+					lastSent = Date.now();
 				}
 				setTimeout(tick, f.same ? 120 : 50);
 			} catch (err) {
@@ -317,6 +354,7 @@ export async function startServer(opts) {
 				return;
 			}
 			try {
+				if (m.t === 'ack') return void (ackN = Math.max(ackN, Number(m.n) || 0));
 				if (m.t === 'fit' || m.t === 'nofit') {
 					if (viewOnly || hwnd === 0 || !entry) return;
 					if (m.t === 'fit') await refit(hwnd, entry, { w: Number(m.w) || size.w, h: Number(m.h) || size.h });

@@ -6,7 +6,7 @@
 
 const STRINGS = {
 	ko: {
-		termOpen: '열린 터미널', termStart: '새로 열기', termEnd: '이 터미널 끝내기', termCurrent: '지금', term: '터미널', termEnded: '터미널이 끝났습니다', termNew: '새 터미널', termType: '명령 또는 입력 (한글 가능)', termRun: '실행', files: '파일', filesTitle: 'PC 파일', fOpen: 'PC에서 열기', fGet: '휴대폰으로 받기', fShow: '탐색기에서 보기', fUp: '휴대폰에서 올리기', fUploaded: '올렸습니다', fUploading: '올리는 중…', fEmpty: '빈 폴더입니다', fNoAccess: '이 폴더는 열 수 없습니다', fMore: '항목이 많아 일부만 표시합니다', fPlaces: '바로가기', fDrives: '드라이브', pDesktop: '바탕 화면', pDownloads: '다운로드', pDocuments: '문서', pPictures: '사진', pHome: '사용자 폴더', dlDone: '다운로드 완료', dlOpen: '열기', dlFolder: '폴더에서 보기', dlLater: '닫기', dlWaiting: 'PC에서 여는 중…', micOn: '마이크 켜짐 · PC에서 "CABLE Output"을 마이크로 고르세요', micOff: '마이크 꺼짐', micDenied: '마이크 권한이 거부되었습니다', micGuideTitle: 'PC에 가상 마이크 드라이버가 필요합니다', micGuide: 'Windows는 프로그램이 마이크를 만들 수 없어서, 무료 가상 오디오 케이블(VB-CABLE)을 PC에 한 번 설치해야 합니다.', micStep1: 'PC에서 vb-audio.com/Cable 을 열어 VB-CABLE Driver를 받습니다.', micStep2: '압축을 풀고 VBCABLE_Setup_x64.exe를 오른쪽 클릭 → 관리자 권한으로 실행 → Install Driver.', micStep3: 'PC를 다시 시작합니다.', micStep4: '통화·녹음 프로그램에서 마이크를 "CABLE Output"(Hi-Fi Cable이면 "Hi-Fi Cable Output")으로 고릅니다.', micCopy: '주소 복사', micCopied: '주소를 복사했습니다', soundOff: '무음', soundWindow: '이 창 소리', soundAll: '전체 소리', soundFailed: '소리를 가져오지 못했습니다', back: '‹ 목록', close: '닫기', closeOne: '이 창 닫기', closeAll: '{proc} 창 {n}개 모두 닫기', closeHint: '저장하지 않은 내용이 있으면 PC에서 저장할지 묻는 창이 뜹니다.', closed: '창 {n}개에 닫기를 보냈습니다', closeFailed: '창 {n}개는 닫지 못했습니다',
+		fCancel: '취소', fCancelled: '올리기를 취소했습니다', vReconnect: '연결이 끊겼습니다 · 다시 연결하는 중…', vRetry: '다시 연결', vLost: 'PC에 연결할 수 없습니다', termOpen: '열린 터미널', termStart: '새로 열기', termEnd: '이 터미널 끝내기', termCurrent: '지금', term: '터미널', termEnded: '터미널이 끝났습니다', termNew: '새 터미널', termType: '명령 또는 입력 (한글 가능)', termRun: '실행', files: '파일', filesTitle: 'PC 파일', fOpen: 'PC에서 열기', fGet: '휴대폰으로 받기', fShow: '탐색기에서 보기', fUp: '휴대폰에서 올리기', fUploaded: '올렸습니다', fUploading: '올리는 중…', fEmpty: '빈 폴더입니다', fNoAccess: '이 폴더는 열 수 없습니다', fMore: '항목이 많아 일부만 표시합니다', fPlaces: '바로가기', fDrives: '드라이브', pDesktop: '바탕 화면', pDownloads: '다운로드', pDocuments: '문서', pPictures: '사진', pHome: '사용자 폴더', dlDone: '다운로드 완료', dlOpen: '열기', dlFolder: '폴더에서 보기', dlLater: '닫기', dlWaiting: 'PC에서 여는 중…', micOn: '마이크 켜짐 · PC에서 "CABLE Output"을 마이크로 고르세요', micOff: '마이크 꺼짐', micDenied: '마이크 권한이 거부되었습니다', micGuideTitle: 'PC에 가상 마이크 드라이버가 필요합니다', micGuide: 'Windows는 프로그램이 마이크를 만들 수 없어서, 무료 가상 오디오 케이블(VB-CABLE)을 PC에 한 번 설치해야 합니다.', micStep1: 'PC에서 vb-audio.com/Cable 을 열어 VB-CABLE Driver를 받습니다.', micStep2: '압축을 풀고 VBCABLE_Setup_x64.exe를 오른쪽 클릭 → 관리자 권한으로 실행 → Install Driver.', micStep3: 'PC를 다시 시작합니다.', micStep4: '통화·녹음 프로그램에서 마이크를 "CABLE Output"(Hi-Fi Cable이면 "Hi-Fi Cable Output")으로 고릅니다.', micCopy: '주소 복사', micCopied: '주소를 복사했습니다', soundOff: '무음', soundWindow: '이 창 소리', soundAll: '전체 소리', soundFailed: '소리를 가져오지 못했습니다', back: '‹ 목록', close: '닫기', closeOne: '이 창 닫기', closeAll: '{proc} 창 {n}개 모두 닫기', closeHint: '저장하지 않은 내용이 있으면 PC에서 저장할지 묻는 창이 뜹니다.', closed: '창 {n}개에 닫기를 보냈습니다', closeFailed: '창 {n}개는 닫지 못했습니다',
 		loading: '불러오는 중…', send: '보내기', type: '입력할 내용', apps: '앱 창', widgets: '위젯', tray: '트레이', web: '웹 앱', servers: '서버·서비스', secure: '보안 화면',
 		secureRow: 'UAC 확인 창 또는 잠금 화면', secureHint: '관리자 승인이나 PIN 입력을 기다리는 중', minimized: '최소화', viewOnly: '보기만', front: '앞', hidden: '숨김',
 		fitPhone: '폰 크기', fitOrig: '원래 크기', none: '없음', offline: 'PC에 연결할 수 없습니다', gone: '창이 닫혔습니다',
@@ -20,7 +20,7 @@ const STRINGS = {
 		path: '경로', cmd: '명령줄', started: '시작', memory: '메모리', ports: '포트', trayHint: '탭: 클릭 · 길게: 오른쪽 클릭', opened: '열린 창이 없습니다', pc: 'PC',
 	},
 	en: {
-		termOpen: 'Open terminals', termStart: 'Open a new one', termEnd: 'End this terminal', termCurrent: 'now', term: 'Terminal', termEnded: 'The terminal ended', termNew: 'New terminal', termType: 'Command or text', termRun: 'Run', files: 'Files', filesTitle: 'PC files', fOpen: 'Open on the PC', fGet: 'Save to phone', fShow: 'Show in Explorer', fUp: 'Upload from phone', fUploaded: 'Uploaded', fUploading: 'Uploading…', fEmpty: 'Empty folder', fNoAccess: 'This folder cannot be opened', fMore: 'Too many items: some are shown', fPlaces: 'Places', fDrives: 'Drives', pDesktop: 'Desktop', pDownloads: 'Downloads', pDocuments: 'Documents', pPictures: 'Pictures', pHome: 'Home', dlDone: 'Download finished', dlOpen: 'Open', dlFolder: 'Show in folder', dlLater: 'Close', dlWaiting: 'Opening on the PC…', micOn: 'Microphone on · pick "CABLE Output" as the microphone on the PC', micOff: 'Microphone off', micDenied: 'Microphone access was denied', micGuideTitle: 'The PC needs a virtual microphone driver', micGuide: 'Windows does not let a program add a microphone, so a free virtual audio cable (VB-CABLE) has to be installed on the PC once.', micStep1: 'On the PC, open vb-audio.com/Cable and download the VB-CABLE Driver.', micStep2: 'Unzip it, right-click VBCABLE_Setup_x64.exe → Run as administrator → Install Driver.', micStep3: 'Restart the PC.', micStep4: 'In the call or recording app, pick "CABLE Output" (with Hi-Fi Cable: "Hi-Fi Cable Output") as the microphone.', micCopy: 'Copy address', micCopied: 'Address copied', soundOff: 'Muted', soundWindow: 'This window', soundAll: 'Whole PC', soundFailed: 'Could not get the sound', back: '‹ List', close: 'Close', closeOne: 'Close this window', closeAll: 'Close all {n} {proc} windows', closeHint: 'An app with unsaved work asks on the PC whether to save it.', closed: 'Asked {n} window(s) to close', closeFailed: '{n} window(s) could not be closed',
+		fCancel: 'Cancel', fCancelled: 'Upload cancelled', vReconnect: 'Connection lost · reconnecting…', vRetry: 'Reconnect', vLost: 'Cannot reach the PC', termOpen: 'Open terminals', termStart: 'Open a new one', termEnd: 'End this terminal', termCurrent: 'now', term: 'Terminal', termEnded: 'The terminal ended', termNew: 'New terminal', termType: 'Command or text', termRun: 'Run', files: 'Files', filesTitle: 'PC files', fOpen: 'Open on the PC', fGet: 'Save to phone', fShow: 'Show in Explorer', fUp: 'Upload from phone', fUploaded: 'Uploaded', fUploading: 'Uploading…', fEmpty: 'Empty folder', fNoAccess: 'This folder cannot be opened', fMore: 'Too many items: some are shown', fPlaces: 'Places', fDrives: 'Drives', pDesktop: 'Desktop', pDownloads: 'Downloads', pDocuments: 'Documents', pPictures: 'Pictures', pHome: 'Home', dlDone: 'Download finished', dlOpen: 'Open', dlFolder: 'Show in folder', dlLater: 'Close', dlWaiting: 'Opening on the PC…', micOn: 'Microphone on · pick "CABLE Output" as the microphone on the PC', micOff: 'Microphone off', micDenied: 'Microphone access was denied', micGuideTitle: 'The PC needs a virtual microphone driver', micGuide: 'Windows does not let a program add a microphone, so a free virtual audio cable (VB-CABLE) has to be installed on the PC once.', micStep1: 'On the PC, open vb-audio.com/Cable and download the VB-CABLE Driver.', micStep2: 'Unzip it, right-click VBCABLE_Setup_x64.exe → Run as administrator → Install Driver.', micStep3: 'Restart the PC.', micStep4: 'In the call or recording app, pick "CABLE Output" (with Hi-Fi Cable: "Hi-Fi Cable Output") as the microphone.', micCopy: 'Copy address', micCopied: 'Address copied', soundOff: 'Muted', soundWindow: 'This window', soundAll: 'Whole PC', soundFailed: 'Could not get the sound', back: '‹ List', close: 'Close', closeOne: 'Close this window', closeAll: 'Close all {n} {proc} windows', closeHint: 'An app with unsaved work asks on the PC whether to save it.', closed: 'Asked {n} window(s) to close', closeFailed: '{n} window(s) could not be closed',
 		loading: 'Loading…', send: 'Send', type: 'Text to type', apps: 'Windows', widgets: 'Widgets', tray: 'Tray', web: 'Web apps', servers: 'Servers', secure: 'Secure screen',
 		secureRow: 'UAC prompt or lock screen', secureHint: 'Waiting for approval or a PIN', minimized: 'minimized', viewOnly: 'view only', front: 'front', hidden: 'hidden',
 		fitPhone: 'Phone size', fitOrig: 'Original', none: 'None', offline: 'Cannot reach the PC', gone: 'The window closed',
@@ -34,7 +34,7 @@ const STRINGS = {
 		path: 'Path', cmd: 'Command line', started: 'Started', memory: 'Memory', ports: 'Ports', trayHint: 'Tap: click · Hold: right-click', opened: 'Nothing opened', pc: 'PC',
 	},
 	ja: {
-		termOpen: '開いているターミナル', termStart: '新しく開く', termEnd: 'このターミナルを終了', termCurrent: '表示中', term: 'ターミナル', termEnded: 'ターミナルが終了しました', termNew: '新しいターミナル', termType: 'コマンドまたは入力', termRun: '実行', files: 'ファイル', filesTitle: 'PC のファイル', fOpen: 'PC で開く', fGet: 'スマホに保存', fShow: 'エクスプローラーで表示', fUp: 'スマホからアップロード', fUploaded: 'アップロードしました', fUploading: 'アップロード中…', fEmpty: '空のフォルダーです', fNoAccess: 'このフォルダーは開けません', fMore: '項目が多いため一部を表示しています', fPlaces: 'よく使う場所', fDrives: 'ドライブ', pDesktop: 'デスクトップ', pDownloads: 'ダウンロード', pDocuments: 'ドキュメント', pPictures: 'ピクチャ', pHome: 'ユーザー フォルダー', dlDone: 'ダウンロード完了', dlOpen: '開く', dlFolder: 'フォルダーで表示', dlLater: '閉じる', dlWaiting: 'PC で開いています…', micOn: 'マイク オン · PC で「CABLE Output」をマイクに選んでください', micOff: 'マイク オフ', micDenied: 'マイクの許可が拒否されました', micGuideTitle: 'PC に仮想マイクのドライバーが必要です', micGuide: 'Windows ではプログラムがマイクを追加できないため、無料の仮想オーディオケーブル (VB-CABLE) を PC に一度インストールします。', micStep1: 'PC で vb-audio.com/Cable を開き、VB-CABLE Driver をダウンロードします。', micStep2: '展開して VBCABLE_Setup_x64.exe を右クリック → 管理者として実行 → Install Driver。', micStep3: 'PC を再起動します。', micStep4: '通話・録音アプリでマイクを「CABLE Output」(Hi-Fi Cable なら「Hi-Fi Cable Output」)にします。', micCopy: 'アドレスをコピー', micCopied: 'アドレスをコピーしました', soundOff: 'ミュート', soundWindow: 'このウィンドウの音', soundAll: 'PC 全体の音', soundFailed: '音を取得できませんでした', back: '‹ 一覧', close: '閉じる', closeOne: 'このウィンドウを閉じる', closeAll: '{proc} のウィンドウ {n} 個をすべて閉じる', closeHint: '保存していない内容があると、PC で保存するか確認されます。', closed: '{n} 個のウィンドウに閉じる指示を送りました', closeFailed: '{n} 個のウィンドウは閉じられませんでした',
+		fCancel: 'キャンセル', fCancelled: 'アップロードをキャンセルしました', vReconnect: '接続が切れました · 再接続しています…', vRetry: '再接続', vLost: 'PC に接続できません', termOpen: '開いているターミナル', termStart: '新しく開く', termEnd: 'このターミナルを終了', termCurrent: '表示中', term: 'ターミナル', termEnded: 'ターミナルが終了しました', termNew: '新しいターミナル', termType: 'コマンドまたは入力', termRun: '実行', files: 'ファイル', filesTitle: 'PC のファイル', fOpen: 'PC で開く', fGet: 'スマホに保存', fShow: 'エクスプローラーで表示', fUp: 'スマホからアップロード', fUploaded: 'アップロードしました', fUploading: 'アップロード中…', fEmpty: '空のフォルダーです', fNoAccess: 'このフォルダーは開けません', fMore: '項目が多いため一部を表示しています', fPlaces: 'よく使う場所', fDrives: 'ドライブ', pDesktop: 'デスクトップ', pDownloads: 'ダウンロード', pDocuments: 'ドキュメント', pPictures: 'ピクチャ', pHome: 'ユーザー フォルダー', dlDone: 'ダウンロード完了', dlOpen: '開く', dlFolder: 'フォルダーで表示', dlLater: '閉じる', dlWaiting: 'PC で開いています…', micOn: 'マイク オン · PC で「CABLE Output」をマイクに選んでください', micOff: 'マイク オフ', micDenied: 'マイクの許可が拒否されました', micGuideTitle: 'PC に仮想マイクのドライバーが必要です', micGuide: 'Windows ではプログラムがマイクを追加できないため、無料の仮想オーディオケーブル (VB-CABLE) を PC に一度インストールします。', micStep1: 'PC で vb-audio.com/Cable を開き、VB-CABLE Driver をダウンロードします。', micStep2: '展開して VBCABLE_Setup_x64.exe を右クリック → 管理者として実行 → Install Driver。', micStep3: 'PC を再起動します。', micStep4: '通話・録音アプリでマイクを「CABLE Output」(Hi-Fi Cable なら「Hi-Fi Cable Output」)にします。', micCopy: 'アドレスをコピー', micCopied: 'アドレスをコピーしました', soundOff: 'ミュート', soundWindow: 'このウィンドウの音', soundAll: 'PC 全体の音', soundFailed: '音を取得できませんでした', back: '‹ 一覧', close: '閉じる', closeOne: 'このウィンドウを閉じる', closeAll: '{proc} のウィンドウ {n} 個をすべて閉じる', closeHint: '保存していない内容があると、PC で保存するか確認されます。', closed: '{n} 個のウィンドウに閉じる指示を送りました', closeFailed: '{n} 個のウィンドウは閉じられませんでした',
 		loading: '読み込み中…', send: '送信', type: '入力する内容', apps: 'ウィンドウ', widgets: 'ウィジェット', tray: 'トレイ', web: 'Web アプリ', servers: 'サーバー', secure: 'セキュア画面',
 		secureRow: 'UAC 確認またはロック画面', secureHint: '承認または PIN を待っています', minimized: '最小化', viewOnly: '表示のみ', front: '前面', hidden: '非表示',
 		fitPhone: 'スマホサイズ', fitOrig: '元のサイズ', none: 'なし', offline: 'PC に接続できません', gone: 'ウィンドウが閉じました',
@@ -48,7 +48,7 @@ const STRINGS = {
 		path: 'パス', cmd: 'コマンドライン', started: '開始', memory: 'メモリ', ports: 'ポート', trayHint: 'タップ: クリック · 長押し: 右クリック', opened: '開いたウィンドウはありません', pc: 'PC',
 	},
 	zh: {
-		termOpen: '已打开的终端', termStart: '新建', termEnd: '结束此终端', termCurrent: '当前', term: '终端', termEnded: '终端已结束', termNew: '新终端', termType: '命令或输入', termRun: '运行', files: '文件', filesTitle: '电脑文件', fOpen: '在电脑上打开', fGet: '保存到手机', fShow: '在资源管理器中显示', fUp: '从手机上传', fUploaded: '已上传', fUploading: '正在上传…', fEmpty: '空文件夹', fNoAccess: '无法打开此文件夹', fMore: '项目太多，仅显示部分', fPlaces: '常用位置', fDrives: '驱动器', pDesktop: '桌面', pDownloads: '下载', pDocuments: '文档', pPictures: '图片', pHome: '用户文件夹', dlDone: '下载完成', dlOpen: '打开', dlFolder: '在文件夹中显示', dlLater: '关闭', dlWaiting: '正在电脑上打开…', micOn: '麦克风已开 · 在电脑上选择 "CABLE Output" 作为麦克风', micOff: '麦克风已关', micDenied: '麦克风权限被拒绝', micGuideTitle: '电脑需要虚拟麦克风驱动', micGuide: 'Windows 不允许程序添加麦克风，需要在电脑上安装一次免费的虚拟音频线 (VB-CABLE)。', micStep1: '在电脑上打开 vb-audio.com/Cable，下载 VB-CABLE Driver。', micStep2: '解压后右键 VBCABLE_Setup_x64.exe → 以管理员身份运行 → Install Driver。', micStep3: '重启电脑。', micStep4: '在通话或录音软件中把麦克风选为 "CABLE Output"（Hi-Fi Cable 则为 "Hi-Fi Cable Output"）。', micCopy: '复制地址', micCopied: '地址已复制', soundOff: '静音', soundWindow: '此窗口声音', soundAll: '全部声音', soundFailed: '无法获取声音', back: '‹ 列表', close: '关闭', closeOne: '关闭此窗口', closeAll: '关闭全部 {n} 个 {proc} 窗口', closeHint: '有未保存内容的应用会在电脑上询问是否保存。', closed: '已让 {n} 个窗口关闭', closeFailed: '{n} 个窗口未能关闭',
+		fCancel: '取消', fCancelled: '已取消上传', vReconnect: '连接已断开 · 正在重新连接…', vRetry: '重新连接', vLost: '无法连接到电脑', termOpen: '已打开的终端', termStart: '新建', termEnd: '结束此终端', termCurrent: '当前', term: '终端', termEnded: '终端已结束', termNew: '新终端', termType: '命令或输入', termRun: '运行', files: '文件', filesTitle: '电脑文件', fOpen: '在电脑上打开', fGet: '保存到手机', fShow: '在资源管理器中显示', fUp: '从手机上传', fUploaded: '已上传', fUploading: '正在上传…', fEmpty: '空文件夹', fNoAccess: '无法打开此文件夹', fMore: '项目太多，仅显示部分', fPlaces: '常用位置', fDrives: '驱动器', pDesktop: '桌面', pDownloads: '下载', pDocuments: '文档', pPictures: '图片', pHome: '用户文件夹', dlDone: '下载完成', dlOpen: '打开', dlFolder: '在文件夹中显示', dlLater: '关闭', dlWaiting: '正在电脑上打开…', micOn: '麦克风已开 · 在电脑上选择 "CABLE Output" 作为麦克风', micOff: '麦克风已关', micDenied: '麦克风权限被拒绝', micGuideTitle: '电脑需要虚拟麦克风驱动', micGuide: 'Windows 不允许程序添加麦克风，需要在电脑上安装一次免费的虚拟音频线 (VB-CABLE)。', micStep1: '在电脑上打开 vb-audio.com/Cable，下载 VB-CABLE Driver。', micStep2: '解压后右键 VBCABLE_Setup_x64.exe → 以管理员身份运行 → Install Driver。', micStep3: '重启电脑。', micStep4: '在通话或录音软件中把麦克风选为 "CABLE Output"（Hi-Fi Cable 则为 "Hi-Fi Cable Output"）。', micCopy: '复制地址', micCopied: '地址已复制', soundOff: '静音', soundWindow: '此窗口声音', soundAll: '全部声音', soundFailed: '无法获取声音', back: '‹ 列表', close: '关闭', closeOne: '关闭此窗口', closeAll: '关闭全部 {n} 个 {proc} 窗口', closeHint: '有未保存内容的应用会在电脑上询问是否保存。', closed: '已让 {n} 个窗口关闭', closeFailed: '{n} 个窗口未能关闭',
 		loading: '加载中…', send: '发送', type: '要输入的内容', apps: '窗口', widgets: '小组件', tray: '托盘', web: '网页应用', servers: '服务器', secure: '安全屏幕',
 		secureRow: 'UAC 提示或锁屏', secureHint: '正在等待批准或 PIN', minimized: '已最小化', viewOnly: '仅查看', front: '前台', hidden: '隐藏',
 		fitPhone: '手机尺寸', fitOrig: '原始尺寸', none: '无', offline: '无法连接到电脑', gone: '窗口已关闭',
@@ -318,13 +318,17 @@ function stageSize() {
 	return { w: Math.round(r.width), h: Math.round(r.height) };
 }
 
-function openViewer({ hwnd, title, fit, auto = false, parent = null }) {
+function openViewer({ hwnd, title, fit, auto = false, parent = null, again = false }) {
 	if (viewer.ws) closeViewer(true);
 	$('viewer').hidden = false;
 	$('v-title').textContent = title || '';
 	$('v-sas').hidden = hwnd !== 0;
 	$('v-fit').hidden = hwnd === 0;
-	$('screen').removeAttribute('src');
+	if (!again) {
+		$('screen').removeAttribute('src'); // a reconnect keeps the last picture meanwhile
+		viewer.retries = 0;
+		viewerStatus(null);
+	}
 	Object.assign(viewer, { hwnd, auto, parent, fitted: false, viewOnly: false, mods: new Set() });
 	renderKeys();
 	if (sound.mode !== 'off') soundContext(); // opened from a tap: the moment audio may start
@@ -333,19 +337,24 @@ function openViewer({ hwnd, title, fit, auto = false, parent = null }) {
 	// The size the window gets: the stage, once the viewer is laid out.
 	requestAnimationFrame(() => {
 		const size = stageSize();
-		const url = new URL(`api/view?hwnd=${hwnd}&fit=${fit ? 1 : 0}&w=${size.w}&h=${size.h}`, location.href);
+		const url = new URL(`api/view?hwnd=${hwnd}&fit=${fit ? 1 : 0}&w=${size.w}&h=${size.h}&dpr=${window.devicePixelRatio || 2}&ack=1`, location.href);
 		url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
 		const ws = new WebSocket(url);
 		ws.binaryType = 'arraybuffer';
 		viewer.ws = ws;
 		ws.onmessage = (e) => {
+			viewer.heard = Date.now();
 			if (typeof e.data !== 'string') {
 				const bytes = new Uint8Array(e.data);
 				if (bytes[0] === 0x41) return playSound(e.data);
-				return showFrame(new Blob([e.data], { type: 'image/jpeg' }));
+				showFrame(new Blob([e.data], { type: 'image/jpeg' }));
+				if (viewer.frame?.n) ws.send(JSON.stringify({ t: 'ack', n: viewer.frame.n })); // the PC paces itself on these
+				return;
 			}
 			const m = JSON.parse(e.data);
 			if (m.t === 'ready') {
+				viewer.retries = 0;
+				viewerStatus(null);
 				viewer.viewOnly = m.viewOnly;
 				viewer.fitted = m.fitted;
 				updateFit();
@@ -369,7 +378,9 @@ function openViewer({ hwnd, title, fit, auto = false, parent = null }) {
 				toast(m.code && (S[key] || STRINGS.en[key]) ? t(key) : m.msg);
 			}
 		};
-		ws.onclose = () => viewer.ws === ws && closeViewer();
+		viewer.heard = Date.now();
+		// Dropped (network change, PC restart…): the same window again, not the list.
+		ws.onclose = () => viewer.ws === ws && reconnectViewer({ hwnd, title, fit: viewer.fitted || fit, parent: viewer.parent });
 	});
 	schedule();
 }
@@ -383,9 +394,47 @@ function showFrame(blob) {
 	img.src = url;
 }
 
+// ---------------------------------------------------------------- reconnecting
+// A dropped window view comes back by itself: tries after 1, 2, 4… seconds (at most 10),
+// the last picture stays meanwhile with the state on top, and after about a minute a
+// button to try again. A view that hears nothing for 12 s (the PC sends a sign of life
+// every 5 s) counts as dropped too.
+function viewerStatus(text, retry = false) {
+	const box = $('v-status');
+	box.hidden = !text;
+	box.replaceChildren(...(text ? [h('span', {}, text)] : []), ...(retry ? [h('button', { type: 'button', class: 'chip', onclick: () => viewer.lost && ((viewer.retries = 0), reconnectViewer(viewer.lost)) }, t('vRetry'))] : []));
+}
+
+function reconnectViewer(target) {
+	viewer.ws = null;
+	clearTimeout(viewer.retryTimer);
+	if ($('viewer').hidden || document.hidden) return;
+	viewer.lost = target;
+	viewer.retries = (viewer.retries || 0) + 1;
+	if (viewer.retries > 10) return viewerStatus(t('vLost'), true);
+	viewerStatus(t('vReconnect'));
+	const wait = Math.min(10000, 1000 * 2 ** (viewer.retries - 1));
+	viewer.retryTimer = setTimeout(() => {
+		if (!$('viewer').hidden && !viewer.ws && !document.hidden) openViewer({ ...target, again: true });
+	}, wait);
+}
+
+setInterval(() => {
+	const ws = viewer.ws;
+	if (!ws || ws.readyState !== 1 || document.hidden || Date.now() - (viewer.heard || 0) < 12000) return;
+	viewer.ws = null;
+	ws.close();
+	reconnectViewer({ hwnd: viewer.hwnd, title: $('v-title').textContent, fit: viewer.fitted, parent: viewer.parent });
+}, 2000);
+
 /** replacing: another window opens right away; fromHistory: the back gesture already went back. */
 function closeViewer(replacing = false, fromHistory = false) {
 	viewer.paused = null;
+	if (!replacing) {
+		clearTimeout(viewer.retryTimer);
+		viewer.lost = null;
+		viewerStatus(null);
+	}
 	stopMic();
 	const ws = viewer.ws;
 	viewer.ws = null;
@@ -699,15 +748,45 @@ $('f-pick').addEventListener('change', async () => {
 	$('f-pick').value = '';
 	const dir = files.path;
 	if (!dir || !picked.length) return;
-	for (const f of picked) {
-		toast(`${t('fUploading')} ${f.name}`);
-		const res = await fetch(`api/files/upload?dir=${encodeURIComponent(dir)}&name=${encodeURIComponent(f.name)}`, { method: 'POST', body: f }).catch(() => null);
-		const json = await res?.json().catch(() => null);
-		if (!json?.ok) return toast(json?.error || t('offline'), true);
+	for (let i = 0; i < picked.length; i++) {
+		const r = await uploadOne(dir, picked[i], picked.length > 1 ? `${i + 1}/${picked.length}` : '');
+		if (r === 'cancel') return toast(t('fCancelled'), true);
+		if (r !== 'ok') return toast(r || t('offline'), true);
 	}
 	toast(t('fUploaded'), true);
 	if (files.path === dir) showFolder(dir);
 });
+
+// One file up, with its progress and a cancel button on the files screen. Resolves 'ok',
+// 'cancel' or an error. The PC removes what a cancelled upload left.
+function uploadOne(dir, file, count) {
+	return new Promise((resolve) => {
+		const xhr = new XMLHttpRequest();
+		const bar = h('div', { class: 'up-bar' }, h('i'));
+		const label = h('span', { class: 'up-name' }, `${count ? `${count} · ` : ''}${file.name}`);
+		const pct = h('small', {}, '0%');
+		const box = h('div', { class: 'up-box' }, h('div', { class: 'up-row' }, label, pct, h('button', { type: 'button', class: 'chip', onclick: () => xhr.abort() }, t('fCancel'))), bar);
+		$('files').append(box);
+		const done = (r) => (box.remove(), resolve(r));
+		xhr.upload.onprogress = (e) => {
+			if (!e.lengthComputable) return;
+			const p = Math.round((e.loaded / e.total) * 100);
+			pct.textContent = `${p}% · ${mb(e.loaded)} / ${mb(e.total)}`;
+			bar.firstChild.style.width = `${p}%`;
+		};
+		xhr.onload = () => {
+			let json = null;
+			try {
+				json = JSON.parse(xhr.responseText);
+			} catch {}
+			done(json?.ok ? 'ok' : json?.error || `HTTP ${xhr.status}`);
+		};
+		xhr.onerror = () => done(t('offline'));
+		xhr.onabort = () => done('cancel');
+		xhr.open('POST', `api/files/upload?dir=${encodeURIComponent(dir)}&name=${encodeURIComponent(file.name)}`);
+		xhr.send(file);
+	});
+}
 
 // ---------------------------------------------------------------- finished downloads
 // A download that finished on the PC: say so, and offer to open it or show it in its folder.

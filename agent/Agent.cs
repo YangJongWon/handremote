@@ -335,7 +335,7 @@ namespace HandRemote
 					res["ok"] = Restore(hwnd, Str(r, "saved"));
 					return res;
 				case "frame":
-					return Frame(hwnd, Int(r, "q", 70), Long(r, "crc"));
+					return Frame(hwnd, Int(r, "q", 70), Long(r, "crc"), Dbl(r, "scale", 1), Int(r, "maxw", 0));
 				case "mouse":
 					Mouse(hwnd, Str(r, "t"), Dbl(r, "fx", 0.5), Dbl(r, "fy", 0.5), Int(r, "dy", 0), Int(r, "dx", 0));
 					return res;
@@ -692,7 +692,11 @@ namespace HandRemote
 		/// One JPEG of the window (hwnd 0: the whole primary screen of the input desktop), or
 		/// { same: true } when nothing changed since the frame whose checksum is `crc`.
 		/// </summary>
-		Dictionary<string, object> Frame(IntPtr hwnd, int quality, long crc)
+		/// <summary>
+		/// One capture as JPEG. `scale` (0.25–1) and `maxw` (the phone's width in device pixels)
+		/// shrink it before encoding: the server lowers them on a slow network.
+		/// </summary>
+		Dictionary<string, object> Frame(IntPtr hwnd, int quality, long crc, double scale, int maxW)
 		{
 			var res = new Dictionary<string, object>();
 			Bitmap bmp;
@@ -716,12 +720,32 @@ namespace HandRemote
 				res["h"] = bmp.Height;
 				res["desktop"] = desktopName;
 				if (sum == crc) { res["same"] = true; return res; }
-				using (var ms = new MemoryStream())
+				double f = Math.Max(0.25, Math.Min(1, scale));
+				if (maxW > 0 && bmp.Width * f > maxW) f = (double)maxW / bmp.Width;
+				Bitmap send = bmp;
+				if (f < 0.98)
 				{
-					var ps = new EncoderParameters(1);
-					ps.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, (long)Math.Max(20, Math.Min(95, quality)));
-					bmp.Save(ms, Jpeg(), ps);
-					res["jpeg"] = Convert.ToBase64String(ms.ToArray());
+					send = new Bitmap(Math.Max(1, (int)(bmp.Width * f)), Math.Max(1, (int)(bmp.Height * f)), PixelFormat.Format24bppRgb);
+					using (var g = Graphics.FromImage(send))
+					{
+						g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+						g.DrawImage(bmp, 0, 0, send.Width, send.Height);
+					}
+				}
+				try
+				{
+					using (var ms = new MemoryStream())
+					{
+						var ps = new EncoderParameters(1);
+						ps.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, (long)Math.Max(20, Math.Min(95, quality)));
+						send.Save(ms, Jpeg(), ps);
+						res["jpeg"] = Convert.ToBase64String(ms.ToArray());
+						res["sw"] = send.Width;
+					}
+				}
+				finally
+				{
+					if (send != bmp) send.Dispose();
 				}
 			}
 			return res;

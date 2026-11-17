@@ -5,7 +5,7 @@
 //
 // It brings its Notepad to the front to type into it: the PC shows that for a few seconds.
 import { execFile, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import { join } from 'node:path';
@@ -191,6 +191,40 @@ async function main() {
 			});
 
 			// Ctrl+S in the untitled test Notepad opens Save As; Esc cancels it (nothing is saved).
+			await step('reconnect: a dropped view comes back to the same window, the picture kept', async () => {
+				const before = await page.evaluate(() => viewer.hwnd);
+				await page.evaluate(() => viewer.ws.close()); // as a network drop would
+				await page.locator('#v-status:not([hidden])').waitFor({ timeout: 3000 });
+				const kept = await page.evaluate(() => !!document.getElementById('screen').getAttribute('src'));
+				await page.waitForFunction((h) => viewer.ws?.readyState === 1 && viewer.hwnd === h && document.getElementById('v-status').hidden, before, { timeout: 15000 });
+				assert(kept, 'the picture was cleared while reconnecting');
+				return 'status shown, picture kept, same window again';
+			});
+
+			// A slow network (40 KB/s) while the window keeps changing: the quality goes down.
+			await step('stream: quality follows a slow network', async () => {
+				await page.evaluate(() => {
+					window.__q = [];
+					viewer.ws.addEventListener('message', (e) => {
+						if (typeof e.data === 'string') {
+							const m = JSON.parse(e.data);
+							if (m.t === 'frame') window.__q.push(m.q);
+						}
+					});
+				});
+				const cdp = await context.newCDPSession(page);
+				await cdp.send('Network.enable');
+				await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 40 * 1024, uploadThroughput: 40 * 1024 });
+				for (let i = 0; i < 24; i++) {
+					await page.evaluate((n) => viewer.ws.send(JSON.stringify({ t: 'text', s: `slow network line ${n} ${'#'.repeat(40)}\n` })), i);
+					await sleep(400);
+				}
+				await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+				const qs = await page.evaluate(() => window.__q);
+				assert(qs.length && Math.min(...qs) < qs[0], `quality stayed ${JSON.stringify(qs.slice(0, 20))}`);
+				return `quality ${qs[0]} → ${Math.min(...qs)} over ${qs.length} frames`;
+			});
+
 			await step('dialog: Save As is followed, and Esc comes back to the window', async () => {
 				await page.evaluate(() => viewer.ws.send(JSON.stringify({ t: 'key', vk: 0x53, mods: 'ctrl' })));
 				let dlg = null;
@@ -408,8 +442,31 @@ async function main() {
 				await shot('files');
 				const back = await page.evaluate((path) => fetch(`api/file?path=${encodeURIComponent(path)}`).then((r) => r.text()), join(downloadsDir, up));
 				assert(back === 'from the phone', `download gave "${back}"`);
+				// A big one on a slow link: progress shows, cancel stops it, no half file stays.
+				const cdp = await context.newCDPSession(page);
+				await cdp.send('Network.enable');
+				await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 50, downloadThroughput: -1, uploadThroughput: 300 * 1024 });
+				const big = `big-${Date.now()}.bin`;
+				await page.locator('#f-pick').setInputFiles({ name: big, mimeType: 'application/octet-stream', buffer: Buffer.alloc(6 << 20, 7) });
+				await page.locator('.up-box').waitFor({ timeout: 5000 });
+				let shown = '';
+				for (let i = 0; i < 40 && !/^[1-9]\d*%/.test(shown); i++) {
+					await sleep(250);
+					shown = await page.locator('.up-box small').innerText().catch(() => '');
+				}
+				await shot('upload-progress');
+				await page.locator('.up-box button').click();
+				await page.locator('.up-box').waitFor({ state: 'detached', timeout: 5000 });
+				await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+				let left = true;
+				for (let i = 0; i < 20 && left; i++) {
+					await sleep(250);
+					left = existsSync(join(downloadsDir, big));
+				}
+				assert(/^[1-9]\d*%/.test(shown), `no progress shown ("${shown}")`);
+				assert(!left, 'the cancelled upload left a file');
 				await page.locator('#f-close').click();
-				return `${groups.join(', ')}; up and down ${up}`;
+				return `${groups.join(', ')}; up and down ${up}; cancelled at ${shown.split(' ')[0]}, nothing left`;
 			});
 
 			await step('terminal: PowerShell runs a command, Korean too, and is there again after leaving', async () => {

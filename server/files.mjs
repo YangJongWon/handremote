@@ -2,7 +2,7 @@
 // phone saved into a folder. The server runs as the PC's user, so it sees what that user
 // sees; the phone opens files on the PC through the agent (server.mjs, "open").
 import { createReadStream, createWriteStream, existsSync } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, stat, unlink } from 'node:fs/promises';
 import os from 'node:os';
 import { basename, dirname, isAbsolute, join, normalize } from 'node:path';
 import { pipeline } from 'node:stream/promises';
@@ -116,11 +116,17 @@ export async function handleFiles(req, res, url, sendJson) {
 		const target = freeName(dir, url.searchParams.get('name'));
 		uploaded.add(target.toLowerCase());
 		setTimeout(() => uploaded.delete(target.toLowerCase()), 10 * 60 * 1000).unref();
+		const expected = Number(req.headers['content-length']) || null;
 		try {
 			await pipeline(req, createWriteStream(target, { flags: 'wx' }));
+			const got = (await stat(target)).size;
+			if (expected != null && got !== expected) throw new Error(`cut short (${got} of ${expected} bytes)`);
 			return sendJson(res, 200, { ok: true, path: target, name: basename(target) }), true;
 		} catch (err) {
-			return sendJson(res, 500, { ok: false, error: err.message }), true;
+			// Cancelled on the phone or cut off: no half file left behind.
+			await unlink(target).catch(() => {});
+			if (!res.headersSent && !res.destroyed) sendJson(res, 500, { ok: false, error: err.message });
+			return true;
 		}
 	}
 	return false;
