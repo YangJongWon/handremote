@@ -115,7 +115,7 @@ async function main() {
 			const dev = DEVICES[name];
 			assert(dev, `unknown device ${name}`);
 			console.log(`\n${name}`);
-			const context = await browser.newContext({ ...dev, locale: 'ko-KR', permissions: ['microphone'] });
+			const context = await browser.newContext({ ...dev, locale: 'ko-KR', permissions: ['microphone', 'clipboard-read', 'clipboard-write'] });
 			const page = await context.newPage();
 			const errors = [];
 			page.on('pageerror', (e) => errors.push(e.message));
@@ -341,8 +341,11 @@ async function main() {
 				await page.evaluate(() => {
 					window.__sent = [];
 					const ws = viewer.ws;
-					const orig = ws.send.bind(ws);
-					ws.send = (d) => (typeof d === 'string' && window.__sent.push(JSON.parse(d)), orig(d));
+					if (!ws.__logged) {
+						ws.__logged = true;
+						const orig = ws.send.bind(ws);
+						ws.send = (d) => (typeof d === 'string' && window.__sent.push(JSON.parse(d)), orig(d));
+					}
 				});
 				while ((await page.locator('#v-drag').getAttribute('data-mode')) !== 'pointer') await page.locator('#v-drag').click();
 				await page.locator('#cursor').waitFor({ timeout: 3000 });
@@ -361,15 +364,115 @@ async function main() {
 				await touch(fast);
 				const after = await page.evaluate(() => cursor.fx);
 				assert(mid > before && after - mid > (mid - before) * 1.5, `slow ${mid - before}, fast ${after - mid}`);
+				// Grabbed by its body: the tip lands where the finger takes it, the offset kept.
+				const tip = await page.evaluate(() => {
+					const s = document.getElementById('stage').getBoundingClientRect();
+					const p = cursorPoint();
+					return { x: p.x - s.left, y: p.y - s.top };
+				});
+				const grab = [['pointerdown', 1, tip.x + 8, tip.y + 14, 30]];
+				const to = { x: 80, y: Math.round(box.height * 0.3) };
+				for (let i = 1; i <= 10; i++) grab.push(['pointermove', 1, tip.x + 8 + ((to.x - tip.x) * i) / 10, tip.y + 14 + ((to.y - tip.y) * i) / 10, 20]);
+				grab.push(['pointerup', 1, to.x + 8, to.y + 14, 30]);
+				await touch(grab);
+				const landed = await page.evaluate(() => {
+					const s = document.getElementById('stage').getBoundingClientRect();
+					const p = cursorPoint();
+					return { x: p.x - s.left, y: p.y - s.top };
+				});
+				assert(Math.abs(landed.x - to.x) < 3 && Math.abs(landed.y - to.y) < 3, `grabbed cursor at ${JSON.stringify(landed)}, not ${JSON.stringify(to)}`);
+				const grabbedFx = await page.evaluate(() => cursor.fx);
 				await touch([['pointerdown', 1, 50, 50, 40], ['pointerup', 1, 50, 50, 300]]);
 				const sent = await page.evaluate(() => window.__sent.filter((m) => m.t === 'mouse'));
 				const click = sent.find((m) => m.a === 'click');
 				assert(sent.some((m) => m.a === 'move'), 'no cursor moves sent');
-				assert(click && Math.abs(click.fx - after) < 0.001, `click at ${click?.fx} not at the cursor ${after}`);
+				assert(click && Math.abs(click.fx - grabbedFx) < 0.001, `click at ${click?.fx} not at the cursor ${grabbedFx}`);
 				await shot('pointer');
 				while ((await page.locator('#v-drag').getAttribute('data-mode')) !== 'touch') await page.locator('#v-drag').click();
 				assert(await page.locator('#cursor').isHidden(), 'cursor still shown in touch mode');
-				return `cursor ${before.toFixed(2)} → ${mid.toFixed(2)} (slow) → ${after.toFixed(2)} (fast), click at the cursor`;
+				return `cursor ${before.toFixed(2)} → ${mid.toFixed(2)} (slow) → ${after.toFixed(2)} (fast), grabbed to ${Math.round(landed.x)},${Math.round(landed.y)}, click at the cursor`;
+			});
+
+			// The PC's clipboard is the real one: its text is kept and put back afterwards.
+			await step('clipboard: "Copy" takes the window\'s selection to the phone; a copy on the PC offers itself', async () => {
+				const kept = await page.evaluate(() => fetch('api/clipboard').then((r) => r.json()).then((r) => r.text));
+				const post = (text) => page.evaluate((text) => fetch('api/clipboard', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) }).then((r) => r.json()), text);
+				try {
+					const inNotepad = await notepadText(win.hwnd);
+					await page.evaluate(() => send({ t: 'key', vk: 65, mods: 'ctrl' })); // select all in the test Notepad
+					await sleep(400);
+					await page.locator('#keys .copy-key').click();
+					let phone = '';
+					for (let i = 0; i < 20 && phone !== inNotepad; i++) {
+						await sleep(250);
+						phone = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+					}
+					assert(inNotepad && phone === inNotepad, `phone got "${phone}", Notepad has "${inNotepad}"`);
+					const mark = `handremote-check ${Date.now()}`;
+					await sleep(4200); // past the phone's own "Copy"
+					await post(mark);
+					await page.locator('#clip:not([hidden])').waitFor({ timeout: 6000 });
+					assert((await page.locator('#clip-text').innerText()).includes(mark), 'notice without the text');
+					await shot('clipboard');
+					await page.locator('#clip-take').click();
+					let got = '';
+					for (let i = 0; i < 20 && got !== mark; i++) {
+						await sleep(250);
+						got = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+					}
+					assert(got === mark, `notice gave "${got}"`);
+					return `"${inNotepad}" by Copy, "${mark}" by the notice`;
+				} finally {
+					await post(kept ?? '');
+				}
+			});
+
+			// "Select" in pointer mode, for real: across the test Notepad's first line, then "Copy".
+			// The PC's clipboard text is put back afterwards.
+			await step('select: pointer mode "Select" holds the button while the cursor moves; a tap lets go', async () => {
+				const kept = await page.evaluate(() => fetch('api/clipboard').then((r) => r.json()).then((r) => r.text));
+				try {
+					while ((await page.locator('#v-drag').getAttribute('data-mode')) !== 'pointer') await page.locator('#v-drag').click();
+					await page.locator('#v-select').waitFor({ timeout: 3000 });
+					await page.evaluate(() => {
+						window.__sent = [];
+						const ws = viewer.ws;
+						if (!ws.__logged) {
+							ws.__logged = true;
+							const orig = ws.send.bind(ws);
+							ws.send = (d) => (typeof d === 'string' && window.__sent.push(JSON.parse(d)), orig(d));
+						}
+						Object.assign(cursor, { fx: 0.005, fy: 0.09 }); // the first line's left edge
+						cursorMoved();
+					});
+					await sleep(300);
+					await page.locator('#v-select').click();
+					assert((await page.locator('#v-select').getAttribute('aria-pressed')) === 'true', 'not selecting');
+					const box = await page.locator('#stage').boundingBox();
+					const y = Math.round(box.height / 2);
+					const sweep = [['pointerdown', 1, 40, y, 20]];
+					for (let i = 1; i <= 12; i++) sweep.push(['pointermove', 1, 40 + i * 25, y, 15]);
+					sweep.push(['pointerup', 1, 340, y, 60]);
+					await touch(sweep);
+					await touch([['pointerdown', 1, 60, 80, 40], ['pointerup', 1, 60, 80, 300]]); // a tap: let go
+					const all = await page.evaluate(() => window.__sent.filter((m) => m.t === 'mouse').map((m) => m.a));
+					const mouse = all.slice(all.indexOf('down')); // after placing the cursor
+					assert(mouse[0] === 'down' && mouse.includes('move') && mouse.at(-1) === 'up' && !mouse.includes('click'), mouse.join(','));
+					assert((await page.locator('#v-select').getAttribute('aria-pressed')) === 'false', 'still selecting');
+					await shot('selected');
+					await page.locator('#keys .copy-key').click();
+					const inNotepad = await notepadText(win.hwnd);
+					let phone = '';
+					for (let i = 0; i < 20 && !phone; i++) {
+						await sleep(250);
+						phone = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+					}
+					assert(phone && inNotepad.includes(phone), `phone got "${phone}" from "${inNotepad}"`);
+					while ((await page.locator('#v-drag').getAttribute('data-mode')) !== 'touch') await page.locator('#v-drag').click();
+					return `selected "${phone}" and copied it to the phone`;
+				} finally {
+					await page.evaluate((text) => fetch('api/clipboard', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) }), kept ?? '');
+				}
 			});
 
 			await step('reconnect: a dropped view comes back to the same window, the picture kept', async () => {
@@ -729,6 +832,36 @@ async function main() {
 				await sleep(500);
 				await page.locator('#t-close').click();
 				return `${cols} columns, same session after leaving; shells: ${names.join(', ')}; ${second} next to PowerShell`;
+			});
+
+			// Windows' "pick an app" dialog lives in a band EnumWindows skips. Only the dialog this
+			// check opens (one that was not there before) is touched, and only Esc closes it.
+			await step('open-with: the "pick an app" dialog is listed, shown and closed with Esc', async () => {
+				const flyouts = async () => (await page.evaluate(() => fetch('api/list').then((r) => r.json()))).windows.filter((w) => w.cls === 'Shell_Flyout');
+				const before = new Set((await flyouts()).map((w) => w.hwnd));
+				const probe = join(home, 'probe.htm');
+				writeFileSync(probe, '<p>handremote check</p>');
+				spawn('rundll32.exe', ['shell32.dll,OpenAs_RunDLL', probe], { detached: true, stdio: 'ignore' }).unref();
+				let mine = null;
+				for (let i = 0; i < 40 && !mine; i++) {
+					await sleep(250);
+					mine = (await flyouts()).find((w) => !before.has(w.hwnd));
+				}
+				assert(mine, 'the dialog was not listed');
+				assert(mine.kind === 'app' && mine.title, `listed as ${mine.kind} "${mine.title}"`);
+				await page.evaluate((w) => openViewer({ hwnd: w.hwnd, title: w.title, fit: false }), mine);
+				await page.waitForFunction(() => document.getElementById('screen').naturalWidth > 0, null, { timeout: 10000 });
+				await sleep(500);
+				await shot('open-with');
+				await page.evaluate(() => send({ t: 'key', vk: 27, mods: '' }));
+				let gone = false;
+				for (let i = 0; i < 20 && !gone; i++) {
+					await sleep(250);
+					gone = !(await flyouts()).some((w) => w.hwnd === mine.hwnd);
+				}
+				assert(gone, 'Esc did not close it');
+				if (!(await page.locator('#viewer').isHidden())) await page.evaluate(() => closeViewer());
+				return `"${mine.title}" listed, shown, closed`;
 			});
 
 			await step('no page errors', async () => assert(!errors.length, errors.join('; ')));

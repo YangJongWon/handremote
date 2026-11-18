@@ -291,6 +291,22 @@ export async function startServer(opts) {
 			}, 80);
 		}
 
+		// Something copied on the PC: the phone is told, and may take it (api/clipboard).
+		let clipSeq = null;
+		const clipTimer = noControl
+			? null
+			: setInterval(async () => {
+					if (stopped) return;
+					try {
+						const { seq } = await agents.control.request('clipSeq', {}, { timeout: 3000 });
+						if (clipSeq != null && seq !== clipSeq) {
+							const r = await agents.control.request('clipGet', {}, { timeout: 3000 });
+							if (r.text) ws.sendText({ t: 'clip', seq, chars: r.text.length, preview: r.text.slice(0, 60) });
+						}
+						clipSeq = seq;
+					} catch {}
+				}, 1500);
+
 		(async () => {
 			try {
 				entry = await acquire(hwnd, control, fit && !viewOnly ? size : null);
@@ -391,6 +407,7 @@ export async function startServer(opts) {
 		});
 
 		ws.on('close', () => {
+			clearInterval(clipTimer);
 			streams.delete(ws);
 			stopped = true;
 			clearInterval(soundTimer);
@@ -434,8 +451,17 @@ export async function startServer(opts) {
 			if (p === '/api/me') return sendJson(res, 200, { ok: true, linked: !!ctx.linked, device: ctx.device ? { id: ctx.device.id, name: ctx.device.name } : null, perms: Object.fromEntries(PERMS.map((k) => [k, can(ctx, k)])) });
 			if (p.startsWith('/api/devices')) return await devicesApi(req, res, p, ctx);
 			// What each permission covers; looking (the list, the windows, the sound) is everyone's.
-			const need = /^\/api\/term\b/.test(p) ? 'term' : /^\/api\/files?\b/.test(p) ? 'files' : /^\/api\/(close|tray|download\/open)$/.test(p) ? 'control' : null;
+			const need = /^\/api\/term\b/.test(p) ? 'term' : /^\/api\/files?\b/.test(p) ? 'files' : /^\/api\/(close|tray|download\/open|clipboard)$/.test(p) ? 'control' : null;
 			if (need && !can(ctx, need)) return sendJson(res, 403, { ok: false, error: `not allowed on this device (${need})`, code: `perm-${need}` });
+			if (p === '/api/clipboard') {
+				// The PC's clipboard as text: to the phone (GET), or from it (POST).
+				if (req.method === 'POST') {
+					const body = await readBody(req, 2 << 20);
+					return sendJson(res, 200, { ok: true, ...(await agents.control.request('clipSet', { text: String(body.text ?? '') }, { urgent: true })) });
+				}
+				const r = await agents.control.request('clipGet', {}, { urgent: true });
+				return sendJson(res, 200, { ok: true, seq: r.seq, text: r.text || '' });
+			}
 			if (p === '/api/term/list') return sendJson(res, 200, { ok: true, ...(await terminals.list()) });
 			if (p === '/api/list') return sendJson(res, 200, await list(ctx));
 			if (p === '/api/state') return sendJson(res, 200, { ok: true, api: API_VERSION, version: VERSION, now: Date.now(), downloads: downloads.recent(), helper: await helperState(ctx) });

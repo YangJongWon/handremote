@@ -26,6 +26,70 @@ using System.Web.Script.Serialization;
 
 namespace HandRemote
 {
+	/// <summary>The PC's clipboard as text (Win32: works from any thread, no STA needed).</summary>
+	public static class Clip
+	{
+		const uint CF_UNICODETEXT = 13;
+		[DllImport("user32.dll")] public static extern uint GetClipboardSequenceNumber();
+		[DllImport("user32.dll", SetLastError = true)] static extern bool OpenClipboard(IntPtr owner);
+		[DllImport("user32.dll")] static extern bool CloseClipboard();
+		[DllImport("user32.dll")] static extern bool EmptyClipboard();
+		[DllImport("user32.dll")] static extern IntPtr GetClipboardData(uint format);
+		[DllImport("user32.dll")] static extern IntPtr SetClipboardData(uint format, IntPtr mem);
+		[DllImport("user32.dll")] static extern bool IsClipboardFormatAvailable(uint format);
+		[DllImport("kernel32.dll")] static extern IntPtr GlobalAlloc(uint flags, UIntPtr bytes);
+		[DllImport("kernel32.dll")] static extern IntPtr GlobalLock(IntPtr mem);
+		[DllImport("kernel32.dll")] static extern bool GlobalUnlock(IntPtr mem);
+		[DllImport("kernel32.dll")] static extern IntPtr GlobalFree(IntPtr mem);
+
+		/// <summary>Another program may hold the clipboard for a moment: a few tries.</summary>
+		static void Open()
+		{
+			for (int i = 0; i < 10; i++)
+			{
+				if (OpenClipboard(IntPtr.Zero)) return;
+				Thread.Sleep(30);
+			}
+			throw new InvalidOperationException("clipboard-busy: another program holds the clipboard");
+		}
+
+		public static string Get()
+		{
+			if (!IsClipboardFormatAvailable(CF_UNICODETEXT)) return "";
+			Open();
+			try
+			{
+				IntPtr h = GetClipboardData(CF_UNICODETEXT);
+				if (h == IntPtr.Zero) return "";
+				IntPtr p = GlobalLock(h);
+				if (p == IntPtr.Zero) return "";
+				try
+				{
+					string s = Marshal.PtrToStringUni(p) ?? "";
+					return s.Length > 1000000 ? s.Substring(0, 1000000) : s;
+				}
+				finally { GlobalUnlock(h); }
+			}
+			finally { CloseClipboard(); }
+		}
+
+		public static void Set(string text)
+		{
+			byte[] bytes = System.Text.Encoding.Unicode.GetBytes(text + "\0");
+			Open();
+			try
+			{
+				EmptyClipboard();
+				IntPtr h = GlobalAlloc(0x0002 /* GMEM_MOVEABLE */, (UIntPtr)bytes.Length);
+				IntPtr p = GlobalLock(h);
+				Marshal.Copy(bytes, 0, p, bytes.Length);
+				GlobalUnlock(h);
+				if (SetClipboardData(CF_UNICODETEXT, h) == IntPtr.Zero) GlobalFree(h); // the clipboard owns it once set
+			}
+			finally { CloseClipboard(); }
+		}
+	}
+
 	public static class Native
 	{
 		public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
@@ -347,6 +411,17 @@ namespace HandRemote
 					Activate(hwnd);
 					Key(Int(r, "vk", 0), Str(r, "mods") ?? "");
 					return res;
+				case "clipSeq":
+					res["seq"] = (long)Clip.GetClipboardSequenceNumber();
+					return res;
+				case "clipGet":
+					res["seq"] = (long)Clip.GetClipboardSequenceNumber();
+					res["text"] = Clip.Get();
+					return res;
+				case "clipSet":
+					Clip.Set(Str(r, "text") ?? "");
+					res["seq"] = (long)Clip.GetClipboardSequenceNumber();
+					return res;
 				case "tray":
 					res["items"] = Tray.List();
 					return res;
@@ -481,7 +556,7 @@ namespace HandRemote
 			var list = new List<object>();
 			var seenPids = new HashSet<int>();
 			bool selfElevated = SelfElevated();
-			Native.EnumWindows(delegate (IntPtr hwnd, IntPtr l)
+			TopLevel(delegate (IntPtr hwnd, IntPtr l)
 			{
 				if (!Native.IsWindowVisible(hwnd) || Cloaked(hwnd)) return true;
 				string cls = ClassOf(hwnd);
@@ -498,6 +573,8 @@ namespace HandRemote
 				if (!minimized && (w < 40 || h < 24)) return true;
 				string title = Text(hwnd);
 				bool tool = (ex & Native.WS_EX_TOOLWINDOW) != 0 && (ex & Native.WS_EX_APPWINDOW) == 0;
+				// The "pick an app" dialog and its kind have no title: its program's own description.
+				if (title.Length == 0 && cls == "Shell_Flyout" && !tool) title = Describe(pid);
 				string kind;
 				if (!tool && title.Length > 0) kind = "app";
 				else if (!minimized && w >= 40 && h >= 40) kind = "widget";
@@ -525,6 +602,18 @@ namespace HandRemote
 				return true;
 			}, IntPtr.Zero);
 			return list;
+		}
+
+		static string Describe(int pid)
+		{
+			string path = ProcessPath(pid);
+			if (path == null) return "";
+			try
+			{
+				string d = FileVersionInfo.GetVersionInfo(path).FileDescription;
+				return string.IsNullOrWhiteSpace(d) ? Path.GetFileNameWithoutExtension(path) : d.Trim();
+			}
+			catch { return Path.GetFileNameWithoutExtension(path); }
 		}
 
 		/// <summary>CPU (since the last list) and memory, through a process handle: no process snapshot.</summary>
@@ -756,11 +845,26 @@ namespace HandRemote
 		/// owns that is a dialog, or any owned window while the owner itself is disabled (modal).
 		/// The phone follows it, since the window behind takes no input meanwhile.
 		/// </summary>
+		/// <summary>
+		/// Every top-level window, front to back. EnumWindows leaves out the windows Windows puts
+		/// in its own bands (CreateWindowInBand): the "pick an app to open this file" dialog, some
+		/// shell flyouts. FindWindowEx walks them all.
+		/// </summary>
+		static void TopLevel(Native.EnumWindowsProc cb, IntPtr l)
+		{
+			IntPtr h = IntPtr.Zero;
+			for (int i = 0; i < 50000; i++)
+			{
+				h = Native.FindWindowEx(IntPtr.Zero, h, null, null);
+				if (h == IntPtr.Zero || !cb(h, l)) return;
+			}
+		}
+
 		static IntPtr DialogOf(IntPtr hwnd)
 		{
 			IntPtr found = IntPtr.Zero;
 			bool ownerOff = !Native.IsWindowEnabled(hwnd);
-			Native.EnumWindows(delegate (IntPtr w, IntPtr l)
+			TopLevel(delegate (IntPtr w, IntPtr l)
 			{
 				if (w == hwnd || !Native.IsWindowVisible(w) || Native.GetWindow(w, Native.GW_OWNER) != hwnd) return true;
 				int ex = Native.GetWindowLong(w, Native.GWL_EXSTYLE);
@@ -874,6 +978,13 @@ namespace HandRemote
 			if (hwnd == IntPtr.Zero) return; // the whole screen (secure desktop): input goes where it points
 			if (!Native.IsWindow(hwnd)) throw new ArgumentException("window closed");
 			if (ClassOf(hwnd) == "#32768") return; // a popup menu takes input without focus
+			// A shell flyout (the "pick an app" dialog) closes on Alt or on losing focus: no Alt
+			// trick. It is always on top, so a click reaches it as it is.
+			if (ClassOf(hwnd) == "Shell_Flyout")
+			{
+				if (!HasFocus(hwnd)) Native.SetForegroundWindow(hwnd);
+				return;
+			}
 			if (HasFocus(hwnd)) return;
 			if (Native.IsIconic(hwnd)) Native.ShowWindow(hwnd, Native.SW_RESTORE);
 			for (int attempt = 0; attempt < 3 && !HasFocus(hwnd); attempt++)
@@ -1019,7 +1130,7 @@ namespace HandRemote
 		Dictionary<string, object> TrayClick(string item, bool right)
 		{
 			var before = new HashSet<long>();
-			Native.EnumWindows(delegate (IntPtr h, IntPtr l) { if (Native.IsWindowVisible(h)) before.Add(h.ToInt64()); return true; }, IntPtr.Zero);
+			TopLevel(delegate (IntPtr h, IntPtr l) { if (Native.IsWindowVisible(h)) before.Add(h.ToInt64()); return true; }, IntPtr.Zero);
 			IntPtr fgBefore = Native.GetForegroundWindow();
 			var pt = Tray.Locate(item);
 			if (pt == null) throw new ArgumentException("tray icon not found");
@@ -1030,7 +1141,7 @@ namespace HandRemote
 			for (int i = 0; i < 12 && opened == IntPtr.Zero; i++)
 			{
 				Thread.Sleep(100);
-				Native.EnumWindows(delegate (IntPtr h, IntPtr l)
+				TopLevel(delegate (IntPtr h, IntPtr l)
 				{
 					if (opened != IntPtr.Zero || !Native.IsWindowVisible(h) || before.Contains(h.ToInt64()) || Cloaked(h)) return true;
 					var b = Bounds(h);

@@ -68,13 +68,13 @@
 	<div class="vbar">
 		<span class="v-title" id="v-title"></span>
 		<button type="button" class="icon-btn sound" id="v-sound"></button>
-		<button type="button" class="icon-btn" id="v-mic" aria-pressed="false">🎤</button>
+		<button type="button" class="icon-btn" id="v-mic" aria-pressed="false"></button>
 		<button type="button" class="chip" id="v-fit"></button>
-		<button type="button" class="icon-btn" id="v-drag" aria-pressed="false" title="Drag">✥</button>
+		<button type="button" class="icon-btn" id="v-drag" aria-pressed="false"></button>
 		<button type="button" class="chip" id="v-sas" hidden>Ctrl+Alt+Del</button>
 		<button type="button" class="chip back" id="v-close" data-t="back"></button>
 	</div>
-	<div class="stage" id="stage"><img id="screen" alt="" draggable="false"><svg id="cursor" hidden viewBox="0 0 16 24" aria-hidden="true"><path d="M1 1v19l5-5 3.5 7.5 3-1.4L9 13.6h7z"/></svg><button type="button" class="chip" id="v-zoom" hidden></button><div class="v-status" id="v-status" hidden></div></div>
+	<div class="stage" id="stage"><img id="screen" alt="" draggable="false"><svg id="cursor" hidden viewBox="0 0 16 24" aria-hidden="true"><path d="M1 1v19l5-5 3.5 7.5 3-1.4L9 13.6h7z"/></svg><button type="button" class="chip" id="v-zoom" hidden></button><button type="button" class="chip" id="v-select" aria-pressed="false" hidden></button><div class="v-status" id="v-status" hidden></div></div>
 	<div id="drawer-scrim"></div>
 	<aside id="drawer" aria-label="Windows"><div class="drawer-head" id="drawer-head"></div><div class="drawer-list" id="drawer-list"></div></aside>
 	<div class="keys" id="keys"></div>
@@ -83,6 +83,7 @@
 		<button type="submit" class="chip" data-t="send"></button>
 	</form>
 	<div class="toast" id="toast" role="status" hidden></div>
+	<div class="clip" id="clip" role="status" hidden><span id="clip-text"></span><button type="button" class="chip" id="clip-take" data-t="clipTake"></button><button type="button" class="icon-btn" id="clip-close" aria-label="Close">✕</button></div>
 </section>
 
 <section id="sheet" hidden role="dialog">
