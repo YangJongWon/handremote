@@ -4,9 +4,27 @@
 
 **PC의 창을, 폰 크기로.**
 
-켜져 있는 창·위젯·트레이·서버를 분류별 목록으로 보고, 하나를 누르면 그 창이 폰 화면 크기로 다시 배치되어 열립니다. 줄인 화면이 아니라 앱이 폰 크기에 맞춰 다시 그려지므로 글자가 작아지지 않고, 그대로 탭하고 입력할 수 있습니다.
+켜져 있는 창·위젯·트레이·서버를 분류별 목록으로 보고, 하나를 누르면 그 창이 폰 화면 크기로 다시 배치되어 열립니다.<br>
+줄인 화면이 아니라 앱이 폰 크기에 맞춰 다시 그려지므로 글자가 작아지지 않고, 그대로 탭하고 입력할 수 있습니다.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node.js 20+](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
+![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white)
+![Android · iPhone](https://img.shields.io/badge/phone-Android%20%C2%B7%20iPhone-555)
 
 [English](README.md) · **한국어** · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
+
+[desktoptomobile.com](https://desktoptomobile.com/)
+
+<br>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/list.png" width="200" alt="창, 트레이, 서버 목록"><br><sub>분류별 <b>목록</b></sub></td>
+    <td align="center"><img src="docs/window.png" width="200" alt="폰 크기로 다시 배치된 메모장"><br><sub>폰 크기의 <b>창</b></sub></td>
+    <td align="center"><img src="docs/files.png" width="200" alt="PC의 파일"><br><sub>PC의 <b>파일</b></sub></td>
+  </tr>
+</table>
 
 </div>
 
@@ -41,6 +59,8 @@ PC에 [Tailscale](https://tailscale.com)이 로그인되어 있으면 집 밖에
 | 트레이 | 알림 영역 아이콘(숨긴 아이콘 포함) | PC에서 클릭하고 열린 메뉴나 창을 바로 표시. 길게 누르면 오른쪽 클릭 |
 | 웹 앱 | 페이지를 내주는 localhost 포트 | 폰에서 그 앱 열기 |
 | 서버·서비스 | 포트를 열고 있는 프로세스 | 경로, 명령줄, 시작 시각 |
+| 파일 | 바로가기, 드라이브, 연 폴더 | PC에서 열거나 폰으로 받기 |
+| 터미널 | PC의 PowerShell | 실제 터미널. 나가도 PC에서 계속 실행 |
 | 보안 화면 | SYSTEM 도우미가 있을 때, UAC 확인 창이나 잠금 화면 | 자동으로 열림 |
 
 창 보기에서:

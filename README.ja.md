@@ -4,9 +4,27 @@
 
 **PC のウィンドウを、スマホのサイズで。**
 
-開いているウィンドウ・ウィジェット・トレイ・サーバーを分類ごとに一覧し、ひとつをタップするとそのウィンドウがスマホの画面サイズに並べ直されて開きます。縮小した画面ではなくアプリがスマホのサイズで描き直されるので、文字は小さくならず、そのままタップして入力できます。
+開いているウィンドウ・ウィジェット・トレイ・サーバーを分類ごとに一覧し、ひとつをタップするとそのウィンドウがスマホの画面サイズに並べ直されて開きます。<br>
+縮小した画面ではなくアプリがスマホのサイズで描き直されるので、文字は小さくならず、そのままタップして入力できます。
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node.js 20+](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
+![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white)
+![Android · iPhone](https://img.shields.io/badge/phone-Android%20%C2%B7%20iPhone-555)
 
 [English](README.md) · [한국어](README.ko.md) · **日本語** · [简体中文](README.zh-CN.md)
+
+[desktoptomobile.com](https://desktoptomobile.com/)
+
+<br>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/list.png" width="200" alt="ウィンドウ、トレイ、サーバーの一覧"><br><sub>分類ごとの<b>一覧</b></sub></td>
+    <td align="center"><img src="docs/window.png" width="200" alt="スマホのサイズに並べ直したメモ帳"><br><sub>スマホサイズの<b>ウィンドウ</b></sub></td>
+    <td align="center"><img src="docs/files.png" width="200" alt="PCのファイル"><br><sub>PCの<b>ファイル</b></sub></td>
+  </tr>
+</table>
 
 </div>
 
@@ -39,6 +57,8 @@ PC で [Tailscale](https://tailscale.com) にサインインしていれば、�
 | トレイ | 通知領域のアイコン（隠れたものも） | PC でクリックし、開いたメニューやウィンドウを表示。長押しで右クリック |
 | Web アプリ | ページを返す localhost ポート | スマホでそのアプリを開く |
 | サーバー | ポートで待ち受けているプロセス | パス、コマンドライン、開始時刻 |
+| ファイル | ショートカット、ドライブ、開いたフォルダ | PCで開くか、スマホに保存 |
+| ターミナル | PCの PowerShell | 本物のターミナル。離れても PC 側は動き続ける |
 | セキュア画面 | SYSTEM ヘルパーがあるとき、UAC 確認やロック画面 | 自動で開く |
 
 ウィンドウ表示中: **タップ** クリック、**長押し** 右クリック、**1 本または 2 本指ドラッグ** スクロール、**✥** ドラッグモード、下の **入力欄** でどんな文字でも入力（空で送ると Enter）、補助キー Esc・Tab・⌫・Del・Enter・矢印・Ctrl/Alt/Shift/Win・Home・End・PgUp・PgDn・F5。**元のサイズ** でウィンドウを戻して縮小表示します。

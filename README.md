@@ -4,9 +4,27 @@
 
 **Your PC's windows, at your phone's size.**
 
-See the open windows, widgets, tray icons and servers by category; tap one and that window is laid out again at the phone's screen size. Not a shrunken desktop: the app redraws itself for the phone, so text stays readable, and you tap and type in it directly.
+See the open windows, widgets, tray icons and servers by category; tap one and that window is laid out again at the phone's screen size.<br>
+Not a shrunken desktop: the app redraws itself for the phone, so text stays readable, and you tap and type in it directly.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node.js 20+](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
+![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white)
+![Android · iPhone](https://img.shields.io/badge/phone-Android%20%C2%B7%20iPhone-555)
 
 **English** · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
+
+[desktoptomobile.com](https://desktoptomobile.com/)
+
+<br>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/list.png" width="200" alt="Grouped list of windows, tray and servers"><br><sub><b>List</b>, by category</sub></td>
+    <td align="center"><img src="docs/window.png" width="200" alt="Notepad laid out at the phone's size"><br><sub><b>Window</b>, at phone size</sub></td>
+    <td align="center"><img src="docs/files.png" width="200" alt="Files on the PC"><br><sub><b>Files</b> on the PC</sub></td>
+  </tr>
+</table>
 
 </div>
 
@@ -41,6 +59,8 @@ With [Tailscale](https://tailscale.com) signed in on the PC, it also prints `htt
 | Tray | notification area icons, hidden ones too | clicks it on the PC and shows the menu or window it opened; hold for right-click |
 | Web apps | localhost ports that serve a page | open the app on the phone |
 | Servers | processes listening on ports | path, command line, start time |
+| Files | shortcuts, drives, and the folder you open | open on the PC, or save it to the phone |
+| Terminal | PowerShell on the PC | a real terminal; it keeps running when you leave |
 | Secure screen | with the SYSTEM helper: a UAC prompt or the lock screen | opens by itself |
 
 In a window: **tap** click, **hold** right-click, **drag with one or two fingers** scroll, **✥** drag mode (select text, move sliders), the **input box** types any text (empty: Enter), and keys Esc, Tab, ⌫, Del, Enter, arrows, Ctrl/Alt/Shift/Win (apply to the next key), Home, End, PgUp, PgDn, F5. **Original** gives the window its size back and shows it scaled.

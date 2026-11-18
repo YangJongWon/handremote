@@ -4,9 +4,27 @@
 
 **电脑上的窗口，按手机的尺寸打开。**
 
-按类别查看打开的窗口、小组件、托盘图标和服务器；点一下，那个窗口就按手机屏幕的尺寸重新排版后打开。不是缩小的桌面，而是应用按手机尺寸重新绘制，文字不会变小，可以直接点按和输入。
+按类别查看打开的窗口、小组件、托盘图标和服务器；点一下，那个窗口就按手机屏幕的尺寸重新排版后打开。<br>
+不是缩小的桌面，而是应用按手机尺寸重新绘制，文字不会变小，可以直接点按和输入。
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node.js 20+](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
+![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D6?logo=windows&logoColor=white)
+![Android · iPhone](https://img.shields.io/badge/phone-Android%20%C2%B7%20iPhone-555)
 
 [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · **简体中文**
+
+[desktoptomobile.com](https://desktoptomobile.com/)
+
+<br>
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/list.png" width="200" alt="窗口、托盘和服务器列表"><br><sub>按类别的<b>列表</b></sub></td>
+    <td align="center"><img src="docs/window.png" width="200" alt="按手机尺寸重新排版的记事本"><br><sub>手机尺寸的<b>窗口</b></sub></td>
+    <td align="center"><img src="docs/files.png" width="200" alt="电脑上的文件"><br><sub>电脑上的<b>文件</b></sub></td>
+  </tr>
+</table>
 
 </div>
 
@@ -39,6 +57,8 @@ handremote
 | 托盘 | 通知区域图标（包括隐藏的） | 在电脑上点击，并显示打开的菜单或窗口；长按为右键 |
 | 网页应用 | 返回网页的 localhost 端口 | 在手机上打开该应用 |
 | 服务器 | 监听端口的进程 | 路径、命令行、启动时间 |
+| 文件 | 快捷方式、驱动器、打开的文件夹 | 在电脑上打开，或保存到手机 |
+| 终端 | 电脑上的 PowerShell | 真正的终端，离开后仍在电脑上继续运行 |
 | 安全屏幕 | 装有 SYSTEM 助手时的 UAC 提示或锁屏 | 自动打开 |
 
 查看窗口时：**点按** 单击，**长按** 右键，**单指或双指拖动** 滚动，**✥** 拖动模式，下方 **输入框** 可输入任何文字（空着发送为 Enter），辅助键 Esc、Tab、⌫、Del、Enter、方向键、Ctrl/Alt/Shift/Win、Home、End、PgUp、PgDn、F5。**原始尺寸** 会把窗口恢复原样并缩放显示。
