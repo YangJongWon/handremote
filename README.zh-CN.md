@@ -44,7 +44,7 @@ npm install -g github:YangJongWon/handremote
 handremote
 ```
 
-用手机相机扫描终端里的二维码（同一 Wi-Fi）。在电脑上打开 **http://localhost:9100/connect** 可以看到大二维码。第一次需要跳过证书警告。
+用手机相机扫描终端里的二维码（同一 Wi-Fi）。在电脑上打开 **http://localhost:9100/__handremote/connect** 可以看到大二维码。第一次需要跳过证书警告。
 
 如果电脑已登录 [Tailscale](https://tailscale.com)，还会显示在外也能用的 `https://<电脑名>.<tailnet>.ts.net:9443`，**只有自己 tailnet 里的设备**能连接。刻意不提供公开链接（Funnel）。
 

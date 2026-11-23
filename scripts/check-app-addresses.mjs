@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { connectHtml } from '../server/server.mjs';
+import { namedAppUrl, preferAppAddress } from '../server/app-address.mjs';
+assert.equal(namedAppUrl('desktop.tail123.ts.net', 'handremote'), 'https://handremote.tail123.ts.net');
+const good = { status: 204, app: 'handremote', instance: 'remote-only' };
+const legacy = { url: 'https://desktop.tail123.ts.net:9443', public: false };
+const opts = { app: 'handremote', dnsName: 'desktop.tail123.ts.net', port: 9100, tls: {}, legacy };
+assert.equal((await preferAppAddress(opts, async () => good)).url, 'https://handremote.tail123.ts.net');
+assert.equal(await preferAppAddress(opts, async (_, local) => local?.local ? good : { ...good, instance: 'another-server' }), legacy);
+assert.equal(await preferAppAddress(opts, async () => null), legacy);
+const html = await connectHtml({ local: 'https://localhost:9100/?tkn=test-only', links: [{ label: 'handremote · Tailscale (주 접속)', url: 'https://handremote.tail123.ts.net/?tkn=test-only', remote: true }] });
+assert.match(html, /handremote · PC 원격 제어/);
+assert.match(html, /주 접속은 Tailscale/);
+assert.match(html, /handide와 별도로 실행/);
+assert.ok(!html.includes('localhost:9100'));
+console.log('PASS: standalone handremote named address, correct backend, fallback and Tailscale-first QR page');

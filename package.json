@@ -24,7 +24,9 @@
   },
   "scripts": {
     "start": "node bin/handremote.mjs",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "check:remote-setup": "node scripts/check-remote-setup.mjs",
+    "check:remote-retry": "node --experimental-test-module-mocks scripts/check-remote-retry.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -40,5 +42,15 @@
   },
   "devDependencies": {
     "playwright": "1.63.0"
-  }
+  },
+  "files": [
+    "bin/",
+    "server/",
+    "agent/*.cs",
+    "agent/*.ps1",
+    "web/",
+    "docs/tailscale-app-addresses.md",
+    "README*.md",
+    "LICENSE"
+  ]
 }

@@ -46,9 +46,11 @@ npm install -g github:YangJongWon/handremote
 handremote
 ```
 
-Scan the QR code in the terminal with the phone's camera (same Wi-Fi). **http://localhost:9100/connect** on the PC shows it large. Accept the certificate warning once (handremote makes its own HTTPS certificate for the PC).
+The main connection is **handremote · Tailscale**. Install Tailscale, run `handremote remote setup` for the ordinary sign-in and connection setup, then start `handremote`. No administrator API key, host-tag registration or other app is needed. Sign in on the PC and phone with the same Tailscale account and use the terminal link or QR. Check the connection with `handremote remote status`. [Connection commands](docs/tailscale-app-addresses.md)
 
-With [Tailscale](https://tailscale.com) signed in on the PC, it also prints `https://<pc>.<tailnet>.ts.net:9443`, which works away from home for **your own tailnet devices only**. Public links (Funnel) are deliberately not offered.
+`localhost` is a PC-only setup address. Open `http://localhost:9100/__handremote/connect` on the PC for a larger QR. Only the same-Wi-Fi LAN fallback uses a self-signed certificate and may show a warning.
+
+The default main address is `https://<pc>.<tailnet>.ts.net:9443`. Its separate port routes to an independent server. Only your tailnet devices can connect; public links (Funnel) are not offered. Existing app-name addresses remain supported.
 
 ## On the phone
 

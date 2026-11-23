@@ -4,6 +4,7 @@
 // Never Funnel: the SYSTEM helper can reach the lock screen, so handremote stays private.
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { configuredAppAddress } from './app-address.mjs';
 
 const CANDIDATES = {
 	win32: ['C:\\Program Files\\Tailscale\\tailscale.exe', 'C:\\Program Files (x86)\\Tailscale\\tailscale.exe'],
@@ -37,7 +38,7 @@ async function findCli() {
 }
 
 /** Resolves to { url, stop } or { reason }. */
-export async function startTailscale({ port, httpsPort, tls, log }) {
+export async function startTailscale({ port, httpsPort, tls, log, service = process.env.HANDREMOTE_TAILSCALE_SERVICE || 'handremote' }) {
 	const cli = await findCli();
 	if (!cli) return { reason: 'Tailscale is not installed' };
 	let status;
@@ -49,13 +50,18 @@ export async function startTailscale({ port, httpsPort, tls, log }) {
 	const dnsName = status.Self?.DNSName?.replace(/\.$/, '');
 	if (status.BackendState !== 'Running' || !dnsName) return { reason: `Tailscale is ${status.BackendState || 'not running'}` };
 	const target = `${tls ? 'https+insecure' : 'http'}://127.0.0.1:${port}`;
+	let serveStatus;
+	try { serveStatus = JSON.parse((await run(cli, ['serve', 'status', '--json'], 5000)).out); } catch {}
+	const configured = await configuredAppAddress({ app: 'handremote', dnsName, port, tls, legacyPort: httpsPort, service, serveStatus, log });
+	if (configured) return configured;
 	const res = await run(cli, ['serve', '--bg', '--yes', `--https=${httpsPort}`, target], 60000);
 	if (res.code !== 0) {
 		log(`tailscale serve: ${res.out.trim().split('\n').slice(-2).join(' ')}`);
-		return { reason: res.timedOut ? 'tailscale serve timed out (allow HTTPS for your tailnet once: run "handide remote" or the Tailscale admin page)' : 'tailscale serve failed' };
+		return { reason: res.timedOut ? 'tailscale serve timed out (allow HTTPS for your tailnet once: run "handremote remote setup")' : 'tailscale serve failed' };
 	}
 	return {
-		url: `https://${dnsName}:${httpsPort}`,
+		url: `https://${dnsName}${httpsPort === 443 ? '' : `:${httpsPort}`}`,
+		public: false,
 		stop: () => spawnSync(cli, ['serve', `--https=${httpsPort}`, 'off'], { windowsHide: true, timeout: 5000, env: CLI_ENV }),
 	};
 }

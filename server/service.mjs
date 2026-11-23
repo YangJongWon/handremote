@@ -8,9 +8,12 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { HEARTBEAT_FILE, HEARTBEAT_MS } from './heartbeat.mjs';
 
 const WAIT_MS = 5_000; // before starting again
 const WAIT_FAST_EXIT_MS = 60_000; // after a run shorter than a minute, so a broken start does not spin
+const HUNG_S = 120; // no heartbeat for this long: stuck, ended and started again
+const GRACE_S = 180; // after a start (or the PC waking up) before it can count as stuck
 const BIN = fileURLToPath(new URL('../bin/handremote.mjs', import.meta.url));
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -26,18 +29,103 @@ function windowsScript({ args, dataDir }) {
 	const err = join(dataDir, 'handremote.err.log');
 	const command = [process.execPath, BIN, ...args];
 	const cmd = `cmd.exe /c cd /d ${q(ROOT)} && set HANDREMOTE_SERVICE=1&& echo [%date% %time%] handremote start >> ${q(err)} && ${command.map(q).join(' ')} > ${q(log)} 2>> ${q(err)}`;
-	return `' handremote service ("handremote service install"): the PC's windows on the phone, started
-' at logon and again whenever it exits: after ${WAIT_MS / 1000} seconds, or after ${WAIT_FAST_EXIT_MS / 1000} if it ran for less
-' than a minute. "handremote service uninstall" stops it and removes this file.
+	return watchdogScript({
+		name: 'handremote',
+		about: "the PC's windows on the phone",
+		needle: 'handremote\\bin\\handremote.mjs',
+		cmd,
+		heartbeat: join(dataDir, HEARTBEAT_FILE),
+		log,
+		err,
+	});
+}
+
+/**
+ * The Startup script's loop: starts the app when it is not running and ends it when it
+ * is running but stuck: its heartbeat file (heartbeat.mjs) went stale. Kept the same as
+ * handide's (handide/proxy/service.mjs).
+ */
+export function watchdogScript({ name, about, needle, cmd, heartbeat, log, err }) {
+	return `' ${name} service ("${name} service install"): ${about}. Started at logon and
+' again whenever it exits: after ${WAIT_MS / 1000} seconds, or after ${WAIT_FAST_EXIT_MS / 1000} if it ran for less than a
+' minute. Also ended and started again when it stops answering: its heartbeat file
+' (touched every ${HEARTBEAT_MS / 1000} seconds while it answers) is more than ${HUNG_S} seconds old.
+' "${name} service uninstall" stops it and removes this file.
+' Skips starting when ${name} is already running (no duplicate). Second copy of this script exits.
 ' Log: ${log} (current run)
-'      ${err} (all runs, with start times)
-Dim sh, started
+'      ${err} (all runs, with start times and restarts for not answering)
+Option Explicit
+Const HUNG_S = ${HUNG_S}, GRACE_S = ${GRACE_S}
+Dim sh, fso, beat, pid, startedAt, watchFrom, lastTick, everStarted, age
+If WatchdogCount("${name}.vbs") > 1 Then WScript.Quit
 Set sh = CreateObject("Wscript.Shell")
+Set fso = CreateObject("Scripting.FileSystemObject")
+beat = "${heartbeat}"
+startedAt = Now
+watchFrom = Now
+lastTick = Now
+everStarted = False
 Do
-	started = Timer
-	sh.Run "${cmd}", 0, True
-	If Abs(Timer - started) < 60 Then WScript.Sleep ${WAIT_FAST_EXIT_MS} Else WScript.Sleep ${WAIT_MS}
+	' Back from sleep: the app has not had a chance to answer yet.
+	If DateDiff("s", lastTick, Now) > 60 Then watchFrom = Now
+	lastTick = Now
+	pid = ProcId("${needle}")
+	If pid = 0 Then
+		If everStarted And DateDiff("s", startedAt, Now) < 60 Then WScript.Sleep ${WAIT_FAST_EXIT_MS}
+		On Error Resume Next
+		If fso.FileExists(beat) Then fso.DeleteFile beat, True
+		On Error GoTo 0
+		sh.Run "${cmd}", 0, False
+		startedAt = Now
+		watchFrom = Now
+		everStarted = True
+	ElseIf DateDiff("s", watchFrom, Now) > GRACE_S And fso.FileExists(beat) Then
+		age = DateDiff("s", fso.GetFile(beat).DateLastModified, Now)
+		If age > HUNG_S Then
+			sh.Run "taskkill /pid " & pid & " /T /F", 0, True
+			WScript.Sleep 1000 ' its cmd.exe lets go of the log
+			Note "${name} did not answer for " & age & " seconds: ended it (pid " & pid & ") to start it again"
+			watchFrom = Now
+		End If
+	End If
+	WScript.Sleep ${WAIT_MS}
 Loop
+
+Sub Note(text)
+	On Error Resume Next
+	Dim f
+	Set f = fso.OpenTextFile("${err}", 8, True)
+	f.WriteLine "[" & Now & "] watchdog: " & text
+	f.Close
+End Sub
+
+Function ProcId(needle)
+	Dim wmi, p, cmd
+	ProcId = 0
+	Set wmi = GetObject("winmgmts:\\\\.\\root\\cimv2")
+	For Each p In wmi.ExecQuery("SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name='node.exe'")
+		cmd = p.CommandLine
+		If Not IsNull(cmd) Then
+			If InStr(1, cmd, needle, 1) > 0 Then
+				ProcId = p.ProcessId
+				Exit Function
+			End If
+		End If
+	Next
+End Function
+
+Function WatchdogCount(needle)
+	Dim wmi, p, cmd, n
+	n = 0
+	Set wmi = GetObject("winmgmts:\\\\.\\root\\cimv2")
+	For Each p In wmi.ExecQuery("SELECT CommandLine FROM Win32_Process WHERE Name='wscript.exe'")
+		cmd = p.CommandLine
+		If Not IsNull(cmd) Then
+			If InStr(1, cmd, needle, 1) > 0 Then n = n + 1
+		End If
+	Next
+	WatchdogCount = n
+End Function
 `;
 }
 

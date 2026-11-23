@@ -26,7 +26,7 @@ const validPort = (s) => {
 
 /** handremote's own pages; everything else may belong to the app last opened. */
 export const isEditorPath = (pathname) =>
-	pathname === '/' || /^\/(app\.js|app\.css|icon\.svg|manifest\.json)$/.test(pathname) || pathname.startsWith('/api/') || pathname === '/connect';
+	pathname === '/' || /^\/(app\.js|app\.css|icon\.svg|manifest\.json)$/.test(pathname) || pathname.startsWith('/api/') || pathname === '/connect' || pathname === '/__handremote/connect' || pathname === '/__handremote/health';
 
 /** The request's own same-origin referer path, or null. */
 function refererPath(req) {

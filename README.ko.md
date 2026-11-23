@@ -46,9 +46,11 @@ npm install -g github:YangJongWon/handremote
 handremote
 ```
 
-터미널에 나온 QR을 폰 카메라로 찍으세요(같은 Wi-Fi). PC에서 **http://localhost:9100/connect** 를 열면 QR이 크게 보입니다. 처음 한 번은 인증서 경고를 넘기세요(handremote가 PC용 HTTPS 인증서를 직접 만듭니다).
+주 접속은 **handremote · Tailscale**입니다. Tailscale 설치 후 `handremote remote setup`으로 일반 로그인과 연결을 설정하고, `handremote`로 실행합니다. 관리자 API 키나 태그 등록, 다른 앱은 필요하지 않습니다. PC와 폰에서 같은 계정으로 Tailscale을 켜고 터미널의 링크나 QR을 사용하세요. 연결 확인은 `handremote remote status`. [연결 명령 안내](docs/tailscale-app-addresses.md)
 
-PC에 [Tailscale](https://tailscale.com)이 로그인되어 있으면 집 밖에서도 되는 `https://<PC이름>.<tailnet>.ts.net:9443` 주소가 함께 나옵니다. **내 tailnet 기기만** 접속됩니다. 공개 링크(Funnel)는 일부러 지원하지 않습니다.
+`localhost`는 휴대폰 접속 주소가 아닙니다. PC에서 QR을 크게 보는 보조 설정 페이지는 `http://localhost:9100/__handremote/connect`입니다. 같은 Wi-Fi용 LAN 주소로 접속할 때만 자체 인증서 경고가 나타날 수 있습니다.
+
+기본 주 주소는 `https://<PC이름>.<tailnet>.ts.net:9443`입니다. handide와 별도 포트의 독립 서버로 실행되며, **내 tailnet 기기만** 접속됩니다. 공개 링크(Funnel)는 지원하지 않습니다. 이미 설정된 앱 이름 주소도 계속 사용할 수 있습니다.
 
 ## 폰 화면
 

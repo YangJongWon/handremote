@@ -44,7 +44,7 @@ npm install -g github:YangJongWon/handremote
 handremote
 ```
 
-ターミナルの QR コードをスマホのカメラで読み取ります（同じ Wi-Fi）。PC で **http://localhost:9100/connect** を開くと QR が大きく表示されます。最初の一度だけ証明書の警告を進めてください。
+ターミナルの QR コードをスマホのカメラで読み取ります（同じ Wi-Fi）。PC で **http://localhost:9100/__handremote/connect** を開くと QR が大きく表示されます。最初の一度だけ証明書の警告を進めてください。
 
 PC で [Tailscale](https://tailscale.com) にサインインしていれば、外出先でも使える `https://<PC名>.<tailnet>.ts.net:9443` も表示されます。**自分の tailnet の端末だけ**が接続できます。公開リンク（Funnel）はあえて用意していません。
 

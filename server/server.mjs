@@ -34,11 +34,13 @@ const VENDOR = {
 	'/vendor/addon-fit.js': '@xterm/addon-fit/lib/addon-fit.js',
 };
 import { HELPER_PIPE, readHelperSecret, helperInstalled } from './helper.mjs';
+import { startHeartbeat } from './heartbeat.mjs';
 
 export const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 export const API_VERSION = 1;
 const WEB = fileURLToPath(new URL('../web/', import.meta.url));
 const TOKEN_COOKIE = 'hr-tkn';
+export const CONNECT_PATH = '/__handremote/connect'; // PC-only QR page, named like handide's /__handide/connect
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
 export const dataDirDefault = () => process.env.HANDREMOTE_HOME || join(os.homedir(), '.handremote');
@@ -105,6 +107,7 @@ export async function startServer(opts) {
 	let token = await loadToken(dataDir, opts.newToken);
 	const devices = createDevices({ dataDir, log });
 	const startedAt = Date.now();
+	const appInstance = crypto.randomBytes(18).toString('base64url');
 	const cable = createCableInstaller({ dataDir, log });
 	let remoteInfo = { reason: opts.local ? 'this PC only (--local)' : opts.remote === false ? 'off (--no-remote)' : 'starting' };
 	const streams = new Map(); // ws → what each open window view sends now, for the diagnosis
@@ -633,6 +636,7 @@ export async function startServer(opts) {
 			token = await loadToken(dataDir, true);
 			const swap = (u) => u.replace(`tkn=${encodeURIComponent(old)}`, `tkn=${encodeURIComponent(token)}`);
 			access = { ...access, local: swap(access.local), links: access.links.map((l) => ({ ...l, url: swap(l.url) })) };
+			if (access.links[0]?.remote) writeEndpoint(access.links[0].url); // handide opens the new one
 			log('the PC link was replaced: the old one no longer pairs');
 			printAccess(access, log).catch(() => {});
 			return sendJson(res, 200, { ok: true });
@@ -679,7 +683,11 @@ export async function startServer(opts) {
 
 	const mainHandler = async (req, res) => {
 		const url = new URL(req.url, 'http://x');
-		if (url.pathname === '/connect') {
+		if (url.pathname === '/__handremote/health') {
+			res.writeHead(204, { 'cache-control': 'no-store', 'x-hand-app': 'handremote', 'x-hand-instance': appInstance });
+			return res.end();
+		}
+		if (url.pathname === CONNECT_PATH || url.pathname === '/connect') { // /connect: older links
 			if (!isLoopback(req) || !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) return sendPage(res, 403, 'This page only opens on the PC itself.');
 			return sendPage(res, 200, await connectHtml(access));
 		}
@@ -734,7 +742,7 @@ export async function startServer(opts) {
 			})
 		: mainServer;
 	const redirect = http.createServer((req, res) => {
-		if (req.url.startsWith('/connect')) return mainHandler(req, res);
+		if (req.url.startsWith(CONNECT_PATH) || req.url.startsWith('/connect')) return mainHandler(req, res);
 		res.writeHead(301, { location: `https://${req.headers.host}${req.url}` }).end();
 	});
 
@@ -753,7 +761,10 @@ export async function startServer(opts) {
 	const endpointFile = join(dataDir, 'endpoint.json');
 	await new Promise((resolve) => linkServer.listen(0, '127.0.0.1', resolve));
 	linkPort = linkServer.address().port;
-	writeFileSync(endpointFile, JSON.stringify({ api: API_VERSION, version: VERSION, port: linkPort, secret: linkSecret, pid: process.pid }), { mode: 0o600 });
+	// url: handremote's own away-from-home address (with its token), so handide's menu opens
+	// handremote there instead of under handide's address.
+	const writeEndpoint = (url) => writeFileSync(endpointFile, JSON.stringify({ api: API_VERSION, version: VERSION, port: linkPort, secret: linkSecret, pid: process.pid, ...(url ? { url } : {}) }), { mode: 0o600 });
+	writeEndpoint();
 
 	// ------------------------------------------------------------ start
 	let stopRemote = null;
@@ -764,6 +775,8 @@ export async function startServer(opts) {
 		if (err.code === 'EADDRINUSE') throw new Error(`port ${opts.port} is in use (another handremote?). Stop it or pass --port <n>.`);
 		throw err;
 	});
+	// Proof of life for the service's watchdog: a stuck handremote is restarted (service.mjs).
+	startHeartbeat({ dataDir, url: `${tls ? 'https' : 'http'}://127.0.0.1:${opts.port}/__handremote/health` });
 	const path = `/?tkn=${encodeURIComponent(token)}`;
 	const scheme = tls ? 'https' : 'http';
 	access = {
@@ -771,18 +784,35 @@ export async function startServer(opts) {
 		links: opts.local ? [] : lanAddresses().map((a) => ({ label: a.tailscale ? 'Tailscale IP' : a.name, url: `${scheme}://${a.ip}:${opts.port}${path}` })),
 	};
 	log(`ready on port ${opts.port}${opts.local ? ' (this PC only)' : ''}; handide link on 127.0.0.1:${linkPort}`);
-	if (!opts.local && opts.remote !== false) {
-		const r = await startTailscale({ port: opts.port, httpsPort: opts.tsPort || 9443, tls, log });
+	// Tailscale may still be connecting when handremote starts at logon (or be signed in, or
+	// installed, only later): a missing address is tried again every 30 seconds for 10
+	// minutes, then every 5 minutes. Once it works, the QR and handide's link follow it.
+	let lastReason = null;
+	let closed = false; // set by cleanup below
+	const connectRemote = async (attempt) => {
+		const r = await startTailscale({ port: opts.port, httpsPort: opts.tsPort || 9443, tls, log, service: opts.tailscaleService });
 		remoteInfo = r.url ? { url: r.url } : { reason: r.reason };
 		if (r.url) {
+			if (closed) return r.stop?.();
 			stopRemote = r.stop;
 			// The ts.net name supersedes the raw tailnet address.
-			access.links = [{ label: 'Tailscale (anywhere, your devices)', url: `${r.url}${path}`, remote: true }, ...access.links.filter((l) => !/^Tailscale/.test(l.label))];
-		} else log(`away-from-home link not available: ${r.reason}`);
-	}
+			access.links = [{ label: 'handremote · Tailscale (주 접속)', url: `${r.url}${path}`, remote: true }, ...(r.alternates || []).map((l) => ({ ...l, url: `${l.url}${path}`, remote: true })), ...access.links.filter((l) => !/^Tailscale/.test(l.label))];
+			writeEndpoint(`${r.url}${path}`);
+			if (attempt) {
+				log(`away-from-home link ready (try ${attempt + 1})`);
+				await printAccess(access, log);
+			}
+			return;
+		}
+		if (r.reason !== lastReason) {
+			lastReason = r.reason; // said once per reason, not on every try
+			log(`away-from-home link not available: ${r.reason}; trying again by itself (every 30 seconds for 10 minutes, then every 5 minutes)`);
+		}
+		if (!closed) setTimeout(() => connectRemote(attempt + 1).catch((err) => log(`away-from-home link: ${err.message}`)), attempt < 20 ? 30_000 : 300_000).unref();
+	};
+	if (!opts.local && opts.remote !== false) await connectRemote(0);
 	await printAccess(access, log);
 
-	let closed = false;
 	const cleanup = () => {
 		if (closed) return;
 		closed = true;
@@ -814,14 +844,15 @@ async function printAccess(access, log) {
 	const best = access.links[0]?.url || access.local;
 	console.log(await QRCode.toString(best, { type: 'terminal', small: true }));
 	for (const l of access.links) log(`${l.label}: ${l.url}`);
+	log(`PC setup only (large QR code, not the phone address): http://localhost:${new URL(access.local).port}${CONNECT_PATH}`);
 	if (!access.links.length) log(`open: ${access.local}`);
 }
 
-async function connectHtml(access) {
+export async function connectHtml(access) {
 	const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 	const items = access.links.length ? access.links : [{ label: 'this PC', url: access.local }];
 	const qrs = await Promise.all(items.map((l) => QRCode.toString(l.url, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' })));
-	return `<h1 style="font-size:22px">handremote</h1><p>폰 카메라로 QR을 찍으세요. 링크는 이 PC를 여는 열쇠입니다.</p>${items
+	return `<h1 style="font-size:22px">handremote · PC 원격 제어</h1><p>PC의 창과 파일을 휴대폰에서 조작합니다. handide와 별도로 실행되는 앱입니다.</p><p>${items[0]?.remote ? '주 접속은 Tailscale입니다. 집에서도 외부에서도 같은 주소를 사용하세요.' : '같은 Wi-Fi 또는 이 PC용 보조 주소입니다. 주 접속인 Tailscale의 실행 및 로그인 상태를 확인하세요.'} 폰 카메라로 QR을 찍으세요. 링크는 이 PC를 여는 열쇠입니다.</p>${items
 		.map((l, i) => `<h2 style="font-size:16px">${esc(l.label)}</h2><div style="max-width:320px">${qrs[i]}</div><p><code style="word-break:break-all">${esc(l.url)}</code></p>`)
 		.join('')}`;
 }
